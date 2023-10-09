@@ -35,6 +35,6 @@ pr_body="
 "
 
 # must provide `--title` and `--body` (or `--fill` or `fill-first`) when not running interactively
-pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H "${branch_name}")
+pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H "${branch_name}" -B master)
 
 echo "${pr_url}"
