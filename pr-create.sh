@@ -32,6 +32,7 @@ $short_description
 
 #### Trello Issue Link:
 
+${JIRA_SERVICE_ADDRESS}/${jira_ticket}
 
 #### Dependency
 "
