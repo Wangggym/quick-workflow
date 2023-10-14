@@ -1,4 +1,9 @@
 #!/bin/bash
+script_dir="$(dirname "$0")"
+
+if ! "$script_dir/check.sh"; then
+    exit 1
+fi
 
 read -p 'Jira ticket: ' jira_ticket
 
@@ -12,11 +17,7 @@ branch_name=${jira_ticket}--$(echo "$issue_name" | sed 's/ /-/g')
 commit_title=${jira_ticket}': '${issue_name}
 
 create_new_branch=$(git checkout -b "${branch_name}")
-sleep 1
 create_new_commit=$(git add . && git commit -m "${commit_title}" && git push)
-
-echo "${create_new_branch}"
-echo "${create_new_commit}"
 
 pr_body="
 # PR Ready
@@ -37,23 +38,27 @@ ${JIRA_SERVICE_ADDRESS}/${jira_ticket}
 #### Dependency
 "
 
-# must provide `--title` and `--body` (or `--fill` or `fill-first`) when not running interactively
-pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H)
+pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H "${create_new_branch}")
 
-sleep 1
 
-echo $pr_url
+if [[ $jira_ticket == *BSF* ]]; then
+    status="In Review"
+else
+    status="UNDER Review"
+fi
+echo $(jira issue assign $jira_ticket $(jira me))
 
-echo | $(jira issue comment add "${jira_ticket}" "${pr_url}")
+echo $(jira issue move $jira_ticket "${status}")
+
+echo $pr_url | jira issue comment add $jira_ticket
 
 # write history
-script_dir="$(dirname "$0")"
-
 pr_id=$(echo "$pr_url" | grep -oE '[0-9]+$')
 
-echo "${jira_ticket},${pr_id}" >> "${script_dir}/work-history.txt"
+echo "${jira_ticket},${pr_id}" >>"${script_dir}/work-history.txt"
 
-# TODO change jira status
+echo $pr_url
+open $pr_url
+
+
 # TODO add Types of changes
-# TODO open pr on windows
-# TODO add jira assign to me
