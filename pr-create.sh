@@ -24,7 +24,7 @@ fi
 echo 'Types of changes:'
 multiselect "false" result types_of_changes preselection
 
-branch_name=${jira_ticket}--$(echo "$issue_name" | sed 's/ /-/g')
+branch_name=${jira_ticket}--$(echo "$issue_name" | sed 's/[^a-zA-Z0-9]/-/g')
 commit_title=${jira_ticket}': '${issue_name}
 pr_body=$(getPRbody $jira_ticket $short_description result)
 
@@ -44,5 +44,8 @@ echo $pr_url | jira issue comment add $jira_ticket
 pr_id=$(echo "$pr_url" | grep -oE '[0-9]+$')
 echo "${jira_ticket},${pr_id}" >>"${script_dir}/work-history.txt"
 
-echo $pr_url
+
+echo $pr_url | pbcopy
+echo ✓ Successfully copied $pr_url to clipboard 
+
 open $pr_url
