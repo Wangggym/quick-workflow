@@ -50,11 +50,16 @@ alias pr-create=/Users/xxx/xxx/quick-workflow/pr-create.sh
 alias pr-merge=/Users/xxx/xxx/quick-workflow/pr-merge.sh
 ```
 
-Now you can use it just input `pr-create` or `pr-merge` in your command.
+4. Make them to be able to execute:
+```
+chmod +x /Users/xxx/xxx/quick-workflow/pr-create.sh
+chmod +x /Users/xxx/xxx/quick-workflow/pr-merge.sh
+```
 
+Now you can use it just input `pr-create` or `pr-merge` in your command.
 
 ### Updates
 
-See `todolist.md`, you can the latest update and others important info. 
+See `todolist.md`, you can the latest update and others important info.
 
 Thank you very much for your valuable feedback and PR, let's work together to make this tool better
