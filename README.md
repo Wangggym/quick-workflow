@@ -60,6 +60,6 @@ Now you can use it just input `pr-create` or `pr-merge` in your command.
 
 ### Updates
 
-See `todolist.md`, you can the latest update and others important info.
+See `todolist.md`, you can see the latest updates and other important info.
 
-Thank you very much for your valuable feedback and PR, let's work together to make this tool better
+Thank you very much for your valuable feedback and PR, let's work together to make these commands better
