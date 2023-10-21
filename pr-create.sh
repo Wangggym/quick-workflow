@@ -9,9 +9,19 @@ source $script_dir/base.sh
 source $script_dir/pr-body.sh
 source $script_dir/multiselect.sh
 
-read -p 'Jira ticket: ' jira_ticket
-read -p 'Issue name: ' issue_name
-read -p 'Short description: ' short_description
+read -p 'Jira ticket(require): ' jira_ticket
+while [ -z "$jira_ticket" ]; do
+    read -p 'Jira ticket(require): ' jira_ticket
+done
+
+read -p 'Issue desc(require): ' issue_desc
+while [ -z "$issue_desc" ]; do
+    read -p 'Issue desc(require): ' issue_desc
+done
+
+read -p 'Short description(optional): ' short_description
+
+short_description=${short_description:-"Not yet"}
 
 if [[ $jira_ticket == *BSF* ]]; then
     status="In Review"
@@ -24,8 +34,8 @@ fi
 echo 'Types of changes:'
 multiselect "false" result types_of_changes preselection
 
-branch_name=${jira_ticket}--$(echo "$issue_name" | sed 's/[^a-zA-Z0-9]/-/g')
-commit_title=${jira_ticket}': '${issue_name}
+branch_name=${jira_ticket}--$(echo "$issue_desc" | sed 's/[^a-zA-Z0-9]/-/g')
+commit_title=${jira_ticket}': '${issue_desc}
 pr_body=$(getPRbody $jira_ticket $short_description result)
 
 # echo $branch_name
@@ -44,8 +54,7 @@ echo $pr_url | jira issue comment add $jira_ticket
 pr_id=$(echo "$pr_url" | grep -oE '[0-9]+$')
 echo "${jira_ticket},${pr_id}" >>"${script_dir}/work-history.txt"
 
-
 echo $pr_url | pbcopy
-echo ✓ Successfully copied $pr_url to clipboard 
+echo ✓ Successfully copied $pr_url to clipboard
 
 open $pr_url

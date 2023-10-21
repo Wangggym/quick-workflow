@@ -5,7 +5,10 @@ if ! "$script_dir/check.sh"; then
     exit 1
 fi
 
-read -p 'PR id: ' pr_id
+read -p 'PR id(require): ' pr_id
+while [ -z "$pr_id" ]; do
+    read -p 'PR id(require): ' pr_id
+done
 
 gh browse $pr_id
 
