@@ -1,7 +1,7 @@
 #!/bin/bash
 script_dir="$(dirname "$0")"
 
-if ! "$script_dir/check-network.sh"; then
+if ! "$script_dir/check.sh"; then
     exit 1
 fi
 

@@ -7,6 +7,10 @@ if ! "$script_dir/check-git-status.sh"; then
     exit 1
 fi
 
+if ! "$script_dir/check-set-proxy.sh"; then
+    exit 1
+fi
+
 if ! "$script_dir/check-network.sh"; then
     exit 1
 fi
