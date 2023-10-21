@@ -6,3 +6,4 @@
      - [ ] [P1] The default `types of changes` option cannot work
 3. - [ ] Feature
         - [ ] Be able to install our program
+        - [ ] Add green right flag
