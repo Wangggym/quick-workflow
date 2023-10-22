@@ -5,18 +5,18 @@ if ! "$script_dir/check.sh"; then
     exit 1
 fi
 
-read -p 'PR id(require): ' pr_id
+pr_id=$1
 while [ -z "$pr_id" ]; do
     read -p 'PR id(require): ' pr_id
 done
 
 gh browse $pr_id
 
-echo 'Do you want to continue? (y/n)'
+echo 'Do you want to continue merging PR? (y/n)'
 
 read choice
 
-if [ "$choice" = "n" ]; then
+if [ ! "$choice" = "y" ]; then
     exit 0
 fi
 

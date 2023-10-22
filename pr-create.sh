@@ -9,7 +9,7 @@ source $script_dir/base.sh
 source $script_dir/pr-body.sh
 source $script_dir/multiselect.sh
 
-read -p 'Jira ticket(require): ' jira_ticket
+jira_ticket=$1
 while [ -z "$jira_ticket" ]; do
     read -p 'Jira ticket(require): ' jira_ticket
 done

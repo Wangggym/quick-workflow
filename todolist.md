@@ -7,5 +7,5 @@
 3. - [ ] Feature
         - [ ] Be able to install our program
         - [ ] Add green right flag
-        - [ ] Add params flag
+        - [x] Add params flag
         - [x] Non empty validation and mandatory validation
