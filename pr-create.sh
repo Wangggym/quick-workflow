@@ -43,7 +43,7 @@ pr_body=$(getPRbody $jira_ticket $short_description result)
 # echo $pr_body
 
 git checkout -b $branch_name
-git add . && git commit -m "${commit_title}" && git push
+git add . && git commit -m "${commit_title}" && git push -u origin $branch_name
 pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H $branch_name)
 
 jira issue assign $jira_ticket $(jira me)
