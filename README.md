@@ -27,31 +27,40 @@ Highlighted Benefits:
 
 1. Install github-cli, here are some verifications, please refer to the official documentation see: https://github.com/cli/cli,
 
-```
+```shell
 brew install gh
+```
+Then need to auth it:
+```shell
+gh auth login
 ```
 
 2. Install jira-cli, here are some verifications, please refer to the official documentation see: https://github.com/ankitpokhrel/jira-cli
 
-```
+```shell
+brew tap ankitpokhrel/jira cli
 brew install jira-cli
+```
+Then need to auth it:
+```shell
+jira init
 ```
 
 3. Clone this project to your local computer, add global variables and alias to your `.zshrc` or `.bashrc`
 
-```
+```shell
 vim ~/.zshrc
 ```
 
-```
-export JIRA_SERVICE_ADDRESS=https://xxx.xx
+```shell
+export JIRA_SERVICE_ADDRESS=https://xxx.xx # Your jira network address
 
 alias pr-create=/Users/xxx/xxx/quick-workflow/pr-create.sh
 alias pr-merge=/Users/xxx/xxx/quick-workflow/pr-merge.sh
 ```
 
 4. Make them to be able to execute:
-```
+```shell
 chmod +x /Users/xxx/xxx/quick-workflow/pr-create.sh
 chmod +x /Users/xxx/xxx/quick-workflow/pr-merge.sh
 ```
