@@ -9,3 +9,4 @@
         - [ ] Add green right flag
         - [x] Add params flag
         - [x] Non empty validation and mandatory validation
+        - [ ] Need to support continuing operations after interruption
