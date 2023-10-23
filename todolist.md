@@ -8,5 +8,6 @@
         - [ ] Be able to install our program
         - [ ] Add green right flag
         - [x] Add params flag
-        - [x] Non empty validation and mandatory validation
+        - [x] Non-empty validation and mandatory validation
         - [ ] Need to support continuing operations after interruption
+        - [ ] Optimize merge comment info into one comment
