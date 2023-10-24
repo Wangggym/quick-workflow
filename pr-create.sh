@@ -34,9 +34,12 @@ fi
 echo 'Types of changes:'
 multiselect "false" result types_of_changes preselection
 
-branch_name=${jira_ticket}--$(echo "$issue_desc" | sed 's/[^a-zA-Z0-9]/-/g')
 commit_title=${jira_ticket}': '${issue_desc}
 pr_body=$(getPRbody $jira_ticket $short_description result)
+branch_name=${jira_ticket}--$(echo "$issue_desc" | sed 's/[^a-zA-Z0-9]/-/g')
+if [ -n "${GH_BRANCH_PREFIX}" ]; then
+    branch_name=${GH_BRANCH_PREFIX}/${jira_ticket}--$(echo "$issue_desc" | sed 's/[^a-zA-Z0-9]/-/g')
+fi
 
 # echo $branch_name
 # echo $commit_title
