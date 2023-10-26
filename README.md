@@ -46,17 +46,25 @@ Then need to auth it:
 jira init
 ```
 
-3. Clone this project to your local computer, add global variables and alias to your `.zshrc` or `.bashrc`
+3. Clone this project to your local computer, add global variables and alias to your `.zshrc` or `.bash_profile`
 
 ```shell
 vim ~/.zshrc
 ```
 
 ```shell
-export JIRA_SERVICE_ADDRESS=https://xxx.xx # Your jira network address
 
 alias pr-create=/Users/xxx/xxx/quick-workflow/pr-create.sh
 alias pr-merge=/Users/xxx/xxx/quick-workflow/pr-merge.sh
+
+export JIRA_SERVICE_ADDRESS=https://xxx.xx # Your Jira network address
+
+
+# Optional
+
+#  Generate the custom branch prefix name
+export GH_BRANCH_PREFIX=xx # xx/jira_ticket--desc
+
 ```
 
 4. Make them to be able to execute:
