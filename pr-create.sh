@@ -8,11 +8,12 @@ fi
 source $script_dir/base.sh
 source $script_dir/pr-body.sh
 source $script_dir/multiselect.sh
+source $script_dir/pr-jira.sh
 
 jira_ticket=$1
-while [ -z "$jira_ticket" ]; do
-    read -p 'Jira ticket(require): ' jira_ticket
-done
+if [ -z "$jira_ticket" ]; then
+    read -p 'Jira ticket(It is optional when there is no ticket): ' jira_ticket
+fi
 
 read -p 'Issue desc(require): ' issue_desc
 while [ -z "$issue_desc" ]; do
@@ -35,8 +36,13 @@ echo 'Types of changes:'
 multiselect "false" result types_of_changes preselection
 
 commit_title=${jira_ticket}': '${issue_desc}
-pr_body=$(getPRbody $jira_ticket $short_description result)
+pr_body=$(getPRbody result "${short_description}" $jira_ticket)
 branch_name=${jira_ticket}--$(echo "$issue_desc" | sed 's/[^a-zA-Z0-9]/-/g')
+
+if [ -z "${jira_ticket}" ]; then
+    commit_title=$issue_desc
+    branch_name=$(echo "$issue_desc" | sed 's/[^a-zA-Z0-9]/-/g')
+fi
 
 if [ -n "${GH_BRANCH_PREFIX}" ]; then
     branch_name=${GH_BRANCH_PREFIX}/${branch_name}
@@ -50,13 +56,9 @@ git checkout -b $branch_name
 git add . && git commit -m "${commit_title}" && git push -u origin $branch_name
 pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H $branch_name)
 
-jira issue assign $jira_ticket $(jira me)
-jira issue move $jira_ticket "${status}"
-echo $pr_url | jira issue comment add $jira_ticket
-
-# write history
-pr_id=$(echo "$pr_url" | grep -oE '[0-9]+$')
-echo "${jira_ticket},${pr_id}" >>"${script_dir}/work-history.txt"
+if [ -n "${jira_ticket}" ]; then
+    jira_create $jira_ticket $pr_url $status
+fi
 
 echo $pr_url | pbcopy
 echo ✓ Successfully copied $pr_url to clipboard
