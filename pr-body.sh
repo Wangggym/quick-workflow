@@ -4,7 +4,6 @@ script_dir="$(dirname "$0")"
 source $script_dir/base.sh
 
 function getPRbody {
-    echo $1
     formatted_output=""
     array_length=${#types_of_changes[@]}
 
