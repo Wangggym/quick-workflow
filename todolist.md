@@ -3,11 +3,14 @@
 2. - [ ] Fix BUG
      - [x] [P0] The network checks that it is not possible to determine whether the git push is available in the command
      - [x] [P1] Exceptions may occur when there is no incoming issue with the `issue desc` option
-     - [ ] [P1] The default `types of changes` option cannot work
+     - [x] [P1] The default `types of changes` option cannot work
 3. - [ ] Feature
-        - [ ] Be able to install our program
-        - [ ] Add green right flag
-        - [x] Add params flag
-        - [x] Non-empty validation and mandatory validation
-        - [ ] Need to support continuing operations after interruption
-        - [ ] Optimize merge comment info into one comment
+     - [ ] Be able to install our program
+     - [ ] Add green right flag
+     - [x] Add params flag
+     - [x] Non-empty validation and mandatory validation
+     - [ ] Need to support continuing operations after interruption
+     - [ ] Optimize merge comment info into one comment
+     - [x] Support to create pr and merge when there is no jira ticket
+     - [ ] Add the installation shell programming for initial global variables
+

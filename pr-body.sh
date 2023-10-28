@@ -4,10 +4,11 @@ script_dir="$(dirname "$0")"
 source $script_dir/base.sh
 
 function getPRbody {
+    echo $1
     formatted_output=""
     array_length=${#types_of_changes[@]}
 
-    eval "local -a result=(\"\${$3[@]}\")"
+    eval "local -a result=(\"\${$1[@]}\")"
 
     for ((i = 0; i < array_length; i++)); do
         if [ "${result[i]}" == "true" ]; then
@@ -30,7 +31,7 @@ $2\n
 
 #### Trello Issue Link:\n
 
-${JIRA_SERVICE_ADDRESS}/$1\n
+${JIRA_SERVICE_ADDRESS}/$3\n
 
 #### Dependency\n
 "
