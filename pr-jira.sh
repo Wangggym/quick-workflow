@@ -1,6 +1,8 @@
 #!/bin/bash
 script_dir="$(dirname "$0")"
 
+source $script_dir/history.sh
+
 jira_create() {
     local jira_ticket=$1
     local pr_url=$2
@@ -11,18 +13,14 @@ jira_create() {
     echo $pr_url | jira issue comment add $jira_ticket
 
     # write history
-    pr_id=$(echo "$pr_url" | grep -oE '[0-9]+$')
-    echo "${jira_ticket},${pr_id}" >>"${script_dir}/work-history.txt"
+    write_history $pr_url $jira_ticket
 }
 
 jira_merge() {
     local pr_id=$1
 
     # read history
-    text=$(grep $pr_id "${script_dir}/work-history.txt")
-    jira_ticket=$(echo "$text" | awk -F ',' '{print $1}')
-
-    echo $jira_ticket
+    jira_ticket=$(read_history $pr_id)
 
     if [ -z "${jira_ticket}" ]; then
         return 0
