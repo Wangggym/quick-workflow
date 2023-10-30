@@ -24,14 +24,6 @@ read -p 'Short description(optional): ' short_description
 
 short_description=${short_description:-"Not yet"}
 
-if [[ $jira_ticket == *BSF* ]]; then
-    status="In Review"
-    preselection=("true" "false" "false")
-else
-    status="UNDER Review"
-    preselection=("false" "true" "false")
-fi
-
 echo 'Types of changes:'
 multiselect "false" result types_of_changes preselection
 
@@ -57,7 +49,7 @@ git add . && git commit -m "${commit_title}" && git push -u origin $branch_name
 pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H $branch_name)
 
 if [ -n "${jira_ticket}" ]; then
-    jira_create "$jira_ticket" "$pr_url" "$status"
+    jira_create "$jira_ticket" "$pr_url"
 fi
 
 echo $pr_url | pbcopy
