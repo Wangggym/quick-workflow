@@ -57,7 +57,7 @@ git add . && git commit -m "${commit_title}" && git push -u origin $branch_name
 pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H $branch_name)
 
 if [ -n "${jira_ticket}" ]; then
-    jira_create $jira_ticket $pr_url $status
+    jira_create "$jira_ticket" "$pr_url" "$status"
 fi
 
 echo $pr_url | pbcopy
