@@ -53,6 +53,6 @@ if [ -n "${jira_ticket}" ]; then
 fi
 
 echo $pr_url | pbcopy
-echo ✓ Successfully copied $pr_url to clipboard
+echo -e $y Successfully copied $pr_url to clipboard
 
 open $pr_url
