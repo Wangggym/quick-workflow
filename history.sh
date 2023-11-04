@@ -1,6 +1,8 @@
 #!/bin/bash
 script_dir="$(dirname "$0")"
 
+source $script_dir/base.sh
+
 write_history() {
     local pr_url=$1
     local jira_ticket=$2
@@ -10,7 +12,7 @@ write_history() {
 
     echo $new_history >>"${script_dir}/work-history.txt"
 
-    echo ✓ Added a work history in work-history.txt: $new_history
+    echo -e $y Added a work history in work-history.txt: $new_history
 }
 
 read_history() {
