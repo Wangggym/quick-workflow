@@ -55,4 +55,7 @@ fi
 echo $pr_url | pbcopy
 echo -e $y Successfully copied $pr_url to clipboard
 
+# Clearly show users the copied information, sleep 0.5 second
+usleep 500000
+
 open $pr_url
