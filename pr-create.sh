@@ -15,6 +15,8 @@ if [ -z "$jira_ticket" ]; then
     read -p 'Jira ticket(It is optional when there is no ticket): ' jira_ticket
 fi
 
+# TODO check jira status file
+
 read -p 'Issue desc(require): ' issue_desc
 while [ -z "$issue_desc" ]; do
     read -p 'Issue desc(require): ' issue_desc

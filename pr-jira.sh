@@ -7,6 +7,7 @@ jira_create() {
     local jira_ticket=$1
     local pr_url=$2
 
+    # TODO use jira-status instead of hard code
     if [[ $jira_ticket == *BSF* ]]; then
         status="In Review"
     fi
