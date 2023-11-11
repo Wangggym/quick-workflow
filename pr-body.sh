@@ -3,6 +3,8 @@ script_dir="$(dirname "$0")"
 
 source $script_dir/base.sh
 
+
+
 function getPRbody {
     formatted_output=""
     array_length=${#types_of_changes[@]}
@@ -30,7 +32,7 @@ $2\n
 
 #### Trello Issue Link:\n
 
-${JIRA_SERVICE_ADDRESS}/$3\n
+${JIRA_SERVICE_ADDRESS}/browse/$3\n
 
 #### Dependency\n
 "

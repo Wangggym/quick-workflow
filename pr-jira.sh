@@ -6,17 +6,7 @@ source $script_dir/history.sh
 jira_create() {
     local jira_ticket=$1
     local pr_url=$2
-
-    # TODO use jira-status instead of hard code
-    if [[ $jira_ticket == *BSF* ]]; then
-        status="In Review"
-    fi
-    if [[ $jira_ticket == *STUD* ]]; then
-        status="UNDER Review"
-    fi
-    if [[ $jira_ticket == *IRB* ]]; then
-        status="IN Progress"
-    fi
+    local status=$3
 
     jira issue assign $jira_ticket $(jira me)
     jira issue move $jira_ticket "${status}"
@@ -36,15 +26,7 @@ jira_merge() {
         return 0
     fi
 
-    if [[ $jira_ticket == *BSF* ]]; then
-        status="FE fixed"
-    fi
-    if [[ $jira_ticket == *STUD* ]]; then
-        status="IN QA"
-    fi
-    if [[ $jira_ticket == *IRB* ]]; then
-        status="DONE"
-    fi
+    status=$(read_status_pr_merged $jira_ticket)
 
     jira issue move $jira_ticket "${status}"
 }

@@ -8,5 +8,5 @@ write_status CSV "In Progress" "Done"
 read_status merged-pr CSV
 read_status created-pr CSV
 
-read_statsu_pr_merged CSV
-read_statsu_pr_created CSV
+read_status_pr_merged CSV
+read_status_pr_created CSV

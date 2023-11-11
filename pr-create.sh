@@ -9,13 +9,19 @@ source $script_dir/base.sh
 source $script_dir/pr-body.sh
 source $script_dir/multiselect.sh
 source $script_dir/pr-jira.sh
+source $script_dir/jira-status.sh
 
 jira_ticket=$1
 if [ -z "$jira_ticket" ]; then
     read -p 'Jira ticket(It is optional when there is no ticket): ' jira_ticket
 fi
-
-# TODO check jira status file
+if [ -n "${jira_ticket}" ]; then
+    status=$(read_status_pr_created $jira_ticket)
+    if [ -z "$status" ]; then
+        write_status_dialog_func "$jira_ticket"
+        $($script_dir/pr-create.sh "$jira_ticket")
+    fi
+fi
 
 read -p 'Issue desc(require): ' issue_desc
 while [ -z "$issue_desc" ]; do
@@ -47,11 +53,14 @@ fi
 # echo $pr_body
 
 git checkout -b $branch_name
-git add . && git commit -m "${commit_title}" && git push -u origin $branch_name
+git add --all
+git commit -m "${commit_title}"
+git push -u origin $branch_name
+
 pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H $branch_name)
 
 if [ -n "${jira_ticket}" ]; then
-    jira_create "$jira_ticket" "$pr_url"
+    jira_create "$jira_ticket" "$pr_url" "$status"
 fi
 
 echo $pr_url | pbcopy
