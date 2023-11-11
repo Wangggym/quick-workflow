@@ -30,7 +30,9 @@ Highlighted Benefits:
 ```shell
 brew install gh
 ```
+
 Then need to auth it:
+
 ```shell
 gh auth login
 ```
@@ -41,7 +43,9 @@ gh auth login
 brew tap ankitpokhrel/jira cli
 brew install jira-cli
 ```
+
 Then need to auth it:
+
 ```shell
 jira init
 ```
@@ -67,7 +71,15 @@ export GH_BRANCH_PREFIX=xx # xx/jira_ticket--desc
 
 ```
 
-4. Make them to be able to execute:
+4. Install `jq` for shell because we need to deal with JSON structure.
+
+```
+brew install jq
+
+```
+
+5. Make them to be able to execute:
+
 ```shell
 chmod +x /Users/xxx/xxx/quick-workflow/pr-create.sh
 chmod +x /Users/xxx/xxx/quick-workflow/pr-merge.sh
