@@ -19,8 +19,8 @@ if [ -n "${jira_ticket}" ]; then
     status=$(read_status_pr_created $jira_ticket)
     if [ -z "$status" ]; then
         write_status_dialog_func "$jira_ticket"
-        $($script_dir/pr-create.sh "$jira_ticket")
     fi
+     status=$(read_status_pr_created $jira_ticket)
 fi
 
 read -p 'Issue desc(require): ' issue_desc

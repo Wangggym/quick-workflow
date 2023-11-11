@@ -1,6 +1,0 @@
-# Here is a dome to show the data structure
-Demo:
-created-pr,Demo,In progress
-merged-pr,Demo,Done
-
-
