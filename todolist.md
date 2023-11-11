@@ -15,5 +15,5 @@
      - [x] Support to create pr and merge when there is no jira ticket
      - [ ] Add the installation shell programming for initial global variables
      - [x] Cannot set http proxy in shell command, so need to remind user setting the proxy
-     - [ ] Make a jira status config file to dynamic adding the status
+     - [x] Make a jira status config file to dynamic adding the status
 
