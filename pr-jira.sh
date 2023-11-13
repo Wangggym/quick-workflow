@@ -2,6 +2,7 @@
 script_dir="$(dirname "$0")"
 
 source $script_dir/history.sh
+source $script_dir/jira-status.sh
 
 jira_create() {
     local jira_ticket=$1
