@@ -37,7 +37,12 @@ Then need to auth it:
 gh auth login
 ```
 
-2. Install jira-cli, here are some verifications, please refer to the official documentation see: https://github.com/ankitpokhrel/jira-cli
+2. use `gh` command to clone this project to your local computer:
+```shell
+  gh repo clone Wangggym/quick-workflow
+```
+
+3. Install jira-cli, here are some verifications, please refer to the official documentation see: https://github.com/ankitpokhrel/jira-cli
 
 ```
 brew tap ankitpokhrel/jira-cli
@@ -53,7 +58,14 @@ Then need to auth it:
   - Run `jira init`, select installation type as `Cloud`, and provide required details to generate a config file required
    for the tool.
 
-3. Clone this project to your local computer, add global variables and alias to your `.zshrc` or `.bash_profile`
+4. Install `jq` for shell because we need to deal with JSON structure.
+
+```
+brew install jq
+
+```
+
+5. add global variables and alias to your `.zshrc` or `.bash_profile`
 
 ```shell
 vim ~/.zshrc
@@ -69,19 +81,12 @@ export JIRA_API_TOKEN=xxx
 
 # Optional
 
-#  Generate the custom branch prefix name
-export GH_BRANCH_PREFIX=xx # xx/jira_ticket--desc
+# Generate the custom branch prefix name
+# export GH_BRANCH_PREFIX=xx # xx/jira_ticket--desc
 
 ```
 
-4. Install `jq` for shell because we need to deal with JSON structure.
-
-```
-brew install jq
-
-```
-
-5. Make them to be able to execute:
+6. Make them to be able to execute:
 
 ```shell
 chmod +x /Users/xxx/xxx/quick-workflow/pr-create.sh
