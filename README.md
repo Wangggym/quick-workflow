@@ -39,16 +39,19 @@ gh auth login
 
 2. Install jira-cli, here are some verifications, please refer to the official documentation see: https://github.com/ankitpokhrel/jira-cli
 
-```shell
-brew tap ankitpokhrel/jira cli
+```
+brew tap ankitpokhrel/jira-cli
 brew install jira-cli
 ```
 
 Then need to auth it:
 
-```shell
-jira init
-```
+  -  [Get a Jira API token](https://id.atlassian.com/manage-profile/security/api-tokens) and export it to your shell as
+   a `JIRA_API_TOKEN` variable. Add it to your shell configuration file, for instance, `$HOME/.bashrc`, so that the
+   variable is always available. Alternatively, you can also use `.netrc` file or `keychain` to set the token. Learn
+   more [here](https://github.com/ankitpokhrel/jira-cli/discussions/356).
+  - Run `jira init`, select installation type as `Cloud`, and provide required details to generate a config file required
+   for the tool.
 
 3. Clone this project to your local computer, add global variables and alias to your `.zshrc` or `.bash_profile`
 
@@ -62,7 +65,7 @@ alias pr-create=/Users/xxx/xxx/quick-workflow/pr-create.sh
 alias pr-merge=/Users/xxx/xxx/quick-workflow/pr-merge.sh
 
 export JIRA_SERVICE_ADDRESS=https://xxx.xx # Your Jira network address
-
+export JIRA_API_TOKEN=xxx
 
 # Optional
 
