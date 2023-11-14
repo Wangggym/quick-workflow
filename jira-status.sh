@@ -34,7 +34,13 @@ check_jira_status_file() {
     local jira_ticket=$2
     local jira_project=$(get_jira_project_name "$jira_ticket")
 
-    status=$(grep -E "^$pr_status,$jira_project" "${script_dir}/jira-status.txt")
+    file_path="${script_dir}/jira-status.txt"
+
+    if [ ! -e "$file_path" ]; then
+        touch "$file_path"
+    fi
+
+    status=$(grep -E "^$pr_status,$jira_project" "$file_path")
     echo $status
 }
 
