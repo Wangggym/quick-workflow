@@ -65,24 +65,20 @@ vim ~/.zshrc
 ```
 
 ```shell
-
 alias pr-create=/Users/xxx/xxx/quick-workflow/pr-create.sh
 alias pr-merge=/Users/xxx/xxx/quick-workflow/pr-merge.sh
 
 export JIRA_SERVICE_ADDRESS=https://xxx.xx # Your Jira network address
 export JIRA_API_TOKEN=xxx
-
-5. Install `jq` for shell because we need to deal with JSON structure.
-
-```
-brew install jq
-
-```
-
 # Optional
 
 # Generate the custom branch prefix name
 # export GH_BRANCH_PREFIX=xx # xx/jira_ticket--desc
+```
+
+5. Install `jq` for shell because we need to deal with JSON structure.
+```
+brew install jq
 
 ```
 
