@@ -58,14 +58,7 @@ Then need to auth it:
   - Run `jira init`, select installation type as `Cloud`, and provide required details to generate a config file required
    for the tool.
 
-4. Install `jq` for shell because we need to deal with JSON structure.
-
-```
-brew install jq
-
-```
-
-5. add global variables and alias to your `.zshrc` or `.bash_profile`
+4. Add global variables and alias to your `.zshrc` or `.bash_profile`
 
 ```shell
 vim ~/.zshrc
@@ -78,6 +71,13 @@ alias pr-merge=/Users/xxx/xxx/quick-workflow/pr-merge.sh
 
 export JIRA_SERVICE_ADDRESS=https://xxx.xx # Your Jira network address
 export JIRA_API_TOKEN=xxx
+
+5. Install `jq` for shell because we need to deal with JSON structure.
+
+```
+brew install jq
+
+```
 
 # Optional
 
