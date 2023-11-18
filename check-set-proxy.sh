@@ -29,6 +29,6 @@ if [ "$http_proxy" == "$match_http_proxy" ] && [ "$https_proxy" == "$match_https
 else
     echo $copy_proxy | pbcopy
     echo -e $n The proxy service is not set on the command line, which may cause the operation to fail.
-    echo Copied proxy command to clipboard, you can use it or set it by yourself
+    echo Copied proxy command to clipboard, you can paste it or set it by yourself
     exit 1
 fi

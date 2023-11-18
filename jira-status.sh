@@ -9,7 +9,7 @@ get_jirs_status_list() {
     email=$(jira me)
     local json_data=$(curl -s "$JIRA_SERVICE_ADDRESS/rest/api/2/project/$1/statuses" \
         --user "$email:$JIRA_API_TOKEN")
-    local options_string=$(echo "$json_data" | jq '.[0].statuses[].untranslatedName')
+    local options_string=$(echo "$json_data" | jq '.[0].statuses[].name')
     echo $options_string
 }
 
@@ -73,7 +73,7 @@ write_status_dialog_func() {
     eval "result_options=($option_string)"
 
     echo "Select one of the following states to change when PR is ready or In progress:"
-    multiselect "false" result_pr_create result_options defualts
+    multiselect "true" result_pr_create result_options defualts
 
     echo "Select one of the following states to change when PR is merged or Done:"
     multiselect "false" result_pr_merged result_options defualts
