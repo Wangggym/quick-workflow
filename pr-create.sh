@@ -33,7 +33,7 @@ read -p 'Short description(optional): ' short_description
 short_description=${short_description:-"Not yet"}
 
 echo 'Types of changes:'
-multiselect "false" result types_of_changes preselection
+multiselect "true" result types_of_changes preselection
 
 commit_title=${jira_ticket}': '${issue_desc}
 pr_body=$(getPRbody result "${short_description}" $jira_ticket)
