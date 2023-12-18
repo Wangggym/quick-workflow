@@ -30,7 +30,7 @@ $formatted_output
 
 $2\n
 
-#### Trello Issue Link:\n
+#### Jira Link:\n
 
 ${JIRA_SERVICE_ADDRESS}/browse/$3\n
 
