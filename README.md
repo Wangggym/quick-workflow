@@ -23,6 +23,8 @@ Highlighted Benefits:
 
 ### How to use it
 
+## [2.0.md](https://github.com/Wangggym/quick-workflow/blob/master/2.0.md)
+
 > Fortunately, we have two powerful tools, github-cli and jira-cli. I use shell scripts to standardize our PR workflow and achieve the above with just one command. You only need to complete the following steps step by step:
 
 1. Install github-cli, here are some verifications, please refer to the official documentation see: https://github.com/cli/cli,
