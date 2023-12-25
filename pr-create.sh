@@ -13,22 +13,26 @@ source $script_dir/jira-status.sh
 
 jira_ticket=$1
 if [ -z "$jira_ticket" ]; then
-    read -p 'Jira ticket(It is optional when there is no ticket): ' jira_ticket
+    read -p 'Jira ticket (It is optional when there is no ticket): ' jira_ticket
 fi
 if [ -n "${jira_ticket}" ]; then
     status=$(read_status_pr_created $jira_ticket)
     if [ -z "$status" ]; then
         write_status_dialog_func "$jira_ticket"
     fi
-     status=$(read_status_pr_created $jira_ticket)
+    status=$(read_status_pr_created $jira_ticket)
 fi
 
-read -p 'Issue desc(require): ' issue_desc
+if [ -n "${jira_ticket}" ]; then
+    issue_desc=$(aiwflow pr-create $jira_ticket)
+    echo -e $y 'PR title: '$issue_desc
+fi
+
 while [ -z "$issue_desc" ]; do
-    read -p 'Issue desc(require): ' issue_desc
+    read -p 'PR title and git branch name (require) : ' issue_desc
 done
 
-read -p 'Short description(optional): ' short_description
+read -p 'Short description (optional): ' short_description
 
 short_description=${short_description:-"Not yet"}
 
