@@ -8,11 +8,14 @@ write_history() {
     local jira_ticket=$2
 
     pr_id=$(echo "$pr_url" | grep -oE '[0-9]+$')
+    
     new_history="${jira_ticket},${pr_id}"
-
     echo $new_history >>"${script_dir}/work-history.txt"
-
     echo -e $y Added a work history in work-history.txt: $new_history
+
+    work_report="${JIRA_SERVICE_ADDRESS}/browse/$jira_ticket"
+    echo $work_report >>"${script_dir}/work-report.txt"
+    echo -e $y Added a work report in work-report.txt: $work_report
 }
 
 read_history() {
