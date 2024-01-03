@@ -34,13 +34,13 @@ done
 
 read -p 'Short description (optional): ' short_description
 
-short_description=${short_description:-"Not yet"}
+github_short_description=${short_description:-"Not yet"}
 
 echo 'Types of changes:'
 multiselect "true" result types_of_changes preselection
 
 commit_title=${jira_ticket}': '${issue_desc}
-pr_body=$(getPRbody result "${short_description}" $jira_ticket)
+pr_body=$(getPRbody result "${github_short_description}" $jira_ticket)
 branch_name=${jira_ticket}--$(echo "$issue_desc" | sed 's/[^a-zA-Z0-9]/-/g')
 
 if [ -z "${jira_ticket}" ]; then
@@ -64,7 +64,7 @@ git push -u origin $branch_name
 pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H $branch_name)
 
 if [ -n "${jira_ticket}" ]; then
-    jira_create "$jira_ticket" "$pr_url" "$status"
+    jira_create "$jira_ticket" "$pr_url" "$status" "$short_description"
 fi
 
 echo $pr_url | pbcopy
