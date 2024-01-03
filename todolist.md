@@ -5,7 +5,7 @@
      - [x] [P1] Exceptions may occur when there is no incoming issue with the `issue desc` option
      - [x] [P1] The default `types of changes` option cannot work
      - [x] [p1] Optimize work history search matching
-     - [ ] [p1] Delete keyboard does not work
+     - [x] [p1] Delete keyboard does not work
 3. - [ ] Feature
      - [ ] Be able to install our program
      - [x] Add green right flag
