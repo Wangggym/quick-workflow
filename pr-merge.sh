@@ -14,15 +14,13 @@ if [ -z "$pr_id" ]; then
     pr_url=$(gh pr status --json url -q '.currentBranch.url')
     pr_id=$(echo "$pr_url" | grep -oE '[0-9]+$')
     if [ -n $"$pr_id" ]; then
-        echo -e $y Find current branch PR id: $pr_id
+        echo -e $y Find current branch PR: $pr_url
     fi
 fi
 
 while [ -z "$pr_id" ]; do
     read -p 'PR id(require): ' pr_id
 done
-
-gh browse $pr_id
 
 echo 'Do you want to continue merging PR? (y/n)'
 
