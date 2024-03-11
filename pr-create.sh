@@ -5,6 +5,10 @@ if ! "$script_dir/check.sh"; then
     exit 1
 fi
 
+if ! "$script_dir/check-pre-commit.sh"; then
+    exit 1
+fi
+
 source $script_dir/base.sh
 source $script_dir/pr-body.sh
 source $script_dir/multiselect.sh
@@ -72,10 +76,10 @@ fi
 # echo $branch_name
 # echo $commit_title
 # echo $pr_body
-
 git checkout -b $branch_name
-git add --all
-git commit -m "${commit_title}"
+
+# We have checked the commit at `check-pre-commit`, so we do not need to verify it again.
+git commit -m "${commit_title}" --no-verify
 git push -u origin $branch_name
 
 pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H $branch_name)
