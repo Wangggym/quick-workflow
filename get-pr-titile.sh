@@ -8,9 +8,9 @@ pr_title=$(gh pr view --json title --jq .title)
 
 if [ -n "$pr_title" ]; then
     echo -e "${y} get pr title: $pr_title"
-    git add --all && git commit -m "$pr_title"
+    git add --all && git commit -m "$pr_title" && git push
 else
     echo -e "${r} Failed to retrieve PR title."
-    git add --all && git commit -m "update"
+    git add --all && git commit -m "update" && git push
 fi
 
