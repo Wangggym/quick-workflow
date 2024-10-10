@@ -40,8 +40,7 @@ if [ -n "${jira_ticket}" ]; then
                 issue_desc=$translated_desc
                 echo -e $y 'Chat GPT translated: '$translated_desc
             else
-
-                echo -e $n 'Chat GPT translated failed, but it dose not affect the use.'
+                echo -e $n 'Chat GPT translation failed. Please make sure you have installed aiwflow correctly (https://github.com/Wangggym/quick-workflow/blob/master/2.0.md).'
             fi
         fi
     else

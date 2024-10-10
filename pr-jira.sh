@@ -4,6 +4,13 @@ script_dir="$(dirname "$0")"
 source $script_dir/history.sh
 source $script_dir/jira-status.sh
 
+# New function to extract Jira ticket ID from PR title
+extract_jira_ticket_id() {
+    local pr_title="$1"
+    local jira_ticket_id=$(echo "$pr_title" | grep -oE '^[A-Z]+-[0-9]+')
+    echo "$jira_ticket_id"
+}
+
 jira_create() {
     local jira_ticket=$1
     local pr_url=$2
@@ -29,10 +36,18 @@ jira_merge() {
     jira_ticket=$(read_history $pr_id)
 
     if [ -z "${jira_ticket}" ]; then
-        return 0
+        # If no Jira ticket found in history, try to extract it from PR title
+        pr_title=$(gh pr view $pr_id --json title --jq .title)
+        jira_ticket=$(extract_jira_ticket_id "$pr_title")
+        
+        if [ -z "${jira_ticket}" ]; then
+            echo "No Jira ticket found in history or PR title"
+            return 0
+        fi
     fi
 
     status=$(read_status_pr_merged $jira_ticket)
 
     jira issue move $jira_ticket "${status}"
 }
+
