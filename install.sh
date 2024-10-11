@@ -7,10 +7,14 @@ source "$SCRIPT_DIR/base.sh"
 # Make all scripts executable
 chmod +x "$SCRIPT_DIR"/*.sh
 
-# Define the alias
+# Define the aliases
 ALIAS_NAME="qkupdate"
 SCRIPT_PATH="$SCRIPT_DIR/get-pr-titile.sh"
 ALIAS_COMMAND="alias $ALIAS_NAME=\"$SCRIPT_PATH\""
+
+PROXY_ALIAS_NAME="proxy"
+PROXY_SCRIPT_PATH="$SCRIPT_DIR/check-set-proxy.sh"
+PROXY_ALIAS_COMMAND="alias $PROXY_ALIAS_NAME=\"$PROXY_SCRIPT_PATH\""
 
 # Determine the user's default shell
 USER_SHELL=$(basename "$SHELL")
@@ -26,19 +30,27 @@ case "$USER_SHELL" in
         echo -e "${y} Detected Bash as the default shell"
         ;;
     *)
-        echo -e "${n} Unsupported shell: $USER_SHELL. Please add the alias manually to your shell's rc file."
+        echo -e "${n} Unsupported shell: $USER_SHELL. Please add the aliases manually to your shell's rc file."
         exit 1
         ;;
 esac
 
-# Check if the alias already exists
-if grep -q "$ALIAS_NAME" "$RC_FILE"; then
-    echo -e "${y} Alias $ALIAS_NAME already exists in $RC_FILE. Updating..."
-    sed -i '' "/alias $ALIAS_NAME=/c\\
-$ALIAS_COMMAND" "$RC_FILE"
-else
-    echo -e "${y} Adding alias $ALIAS_NAME to $RC_FILE"
-    echo "$ALIAS_COMMAND" >> "$RC_FILE"
-fi
+# Function to add an alias only if it doesn't exist
+add_alias_if_not_exists() {
+    local alias_name=$1
+    local alias_command=$2
+    if ! grep -q "alias $alias_name=" "$RC_FILE"; then
+        echo -e "${y} Adding alias $alias_name to $RC_FILE"
+        echo "$alias_command" >> "$RC_FILE"
+    else
+        echo -e "${w} Alias $alias_name already exists in $RC_FILE. Skipping..."
+    fi
+}
 
-echo -e "${y} Installation complete. Please run 'source $RC_FILE' or restart your terminal to use the new alias."
+# Add the qkupdate alias if it doesn't exist
+add_alias_if_not_exists "$ALIAS_NAME" "$ALIAS_COMMAND"
+
+# Add the proxy alias if it doesn't exist
+add_alias_if_not_exists "$PROXY_ALIAS_NAME" "$PROXY_ALIAS_COMMAND"
+
+echo -e "${y} Installation complete. Please run 'source $RC_FILE' or restart your terminal to use the new aliases."
