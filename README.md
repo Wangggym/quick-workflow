@@ -95,6 +95,51 @@ chmod +x /Users/xxx/xxx/quick-workflow/pr-merge.sh
 
 Now you can use it just input `pr-create` or `pr-merge` in your command.
 
+## Automated Installation
+
+To simplify the installation process, you can use the provided `install.sh` script. This script will automatically set up the necessary aliases and make all scripts executable. Here's how to use it:
+
+1. Navigate to the `quick-workflow` directory:
+   ```shell
+   cd path/to/quick-workflow
+   ```
+
+2. Make the install script executable:
+   ```shell
+   chmod +x install.sh
+   ```
+
+3. Run the install script:
+   ```shell
+   ./install.sh
+   ```
+
+The script will:
+- Make all `.sh` files in the directory executable
+- Add the following aliases to your shell's rc file (`.zshrc` for Zsh or `.bashrc` for Bash) if they don't already exist:
+  - `qkupdate`: For quick updates (linked to `get-pr-titile.sh`)
+  - `proxy`: For checking and setting proxy (linked to `check-set-proxy.sh`)
+- If an alias already exists, it will be left unchanged
+- Provide instructions on how to apply the changes
+
+After running the script, remember to source your rc file or restart your terminal to use the new aliases:
+
+```shell
+source ~/.zshrc  # For Zsh
+# or
+source ~/.bashrc  # For Bash
+```
+
+### Using the Proxy Alias
+
+The `proxy` alias is linked to the `check-set-proxy.sh` script, which helps you check and set up proxy settings. To use it, simply type:
+
+```shell
+proxy
+```
+
+This command will check your current proxy settings and, if not set, will copy the appropriate proxy command to your clipboard for easy setup.
+
 ### Updates
 
 See `todolist.md`, you can see the latest updates and other important info.
