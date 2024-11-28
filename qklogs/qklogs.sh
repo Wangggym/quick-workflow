@@ -1,54 +1,76 @@
 #!/bin/bash
 
-# 开启调试模式
-set -x
+# Enable error checking
+set -e
 
-# 检查参数
+# Import base functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+cleanup() {
+    local exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        echo "❌ Script failed with exit code: $exit_code" >&2
+    fi
+    exit $exit_code
+}
+
+trap cleanup EXIT
+
+# Check parameters
 if [ $# -eq 0 ]; then
-    echo "使用方法: $0 <JIRA-ISSUE-KEY>"
+    echo "❌ Usage: $0 <JIRA-ISSUE-KEY>" >&2
     exit 1
 fi
 
 ISSUE_KEY="$1"
-# 修改目录结构，所有文件都放在这个目录下
-BASE_DIR="$HOME/Downloads/logs_${ISSUE_KEY}"
-DOWNLOAD_DIR="$BASE_DIR/downloads"
+OUTPUT_DIR="$HOME/Downloads/logs_${ISSUE_KEY}"
 
-# 创建目录
-mkdir -p "$DOWNLOAD_DIR"
+# Create directory
+mkdir -p "$OUTPUT_DIR"
 
-# 获取脚本所在目录
-SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+# Get script directory and import required functions
 LIB_DIR="$SCRIPT_DIR/lib"
-
-# 导入所需函数
 source "$LIB_DIR/get-urls.sh"
 source "$LIB_DIR/download.sh"
 source "$LIB_DIR/merge.sh"
 
-# 获取附件URL
+# Step 1: Get attachment URLs
+echo "ℹ️  Step 1: Getting attachment URLs"
 ATTACHMENTS=$(get_attachment_urls "$ISSUE_KEY")
-if [ $? -ne 0 ]; then
+RET=$?
+if [ $RET -ne 0 ]; then
+    echo "❌ Failed to get attachment URLs (code: $RET)" >&2
+    exit $RET
+fi
+
+if [ -z "$ATTACHMENTS" ]; then
+    echo "❌ No attachments found" >&2
     exit 1
 fi
 
-echo "找到以下附件:"
+echo "✅ Found attachments:"
 echo "$ATTACHMENTS"
 
-# 执行下载
-if ! download_attachments "$ATTACHMENTS" "$DOWNLOAD_DIR"; then
-    echo "下载过程中发生错误"
+# Step 2: Download files
+echo "ℹ️  Step 2: Downloading attachments"
+if ! download_attachments "$ATTACHMENTS" "$OUTPUT_DIR"; then
+    echo "❌ Download failed" >&2
     exit 1
 fi
 
-# 合并文件
-if ! merge_logs "$DOWNLOAD_DIR"; then
-    echo "合并过程中发生错误"
+# Step 3: Merge files
+echo "ℹ️  Step 3: Merging files"
+if ! merge_logs "$OUTPUT_DIR"; then
+    echo "❌ Merge failed" >&2
     exit 1
 fi
 
-echo "完成! 所有文件位于: $BASE_DIR"
-echo "文件列表:"
-ls -l "$BASE_DIR"
-echo ""
-echo "如果需要解压，请进入目录 $BASE_DIR 后操作" 
+echo "✅ All done! Files are in: $OUTPUT_DIR"
+echo "ℹ️  File list:"
+ls -lh "$OUTPUT_DIR"
+
+# Open the merged file
+if [ -f "$OUTPUT_DIR/merged.zip" ]; then
+    echo "ℹ️  Opening merged file..."
+    open "$OUTPUT_DIR/merged.zip"
+fi 

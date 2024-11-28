@@ -1,64 +1,86 @@
 #!/bin/bash
 
-# 从JIRA issue获取附件URL
+# Get attachment URLs from JIRA issue
 get_attachment_urls() {
     local issue_key="$1"
     
-    # 检查JIRA认证信息
+    # Check JIRA auth
     if [ -z "$JIRA_API_TOKEN" ]; then
-        echo "错误: 未设置JIRA_API_TOKEN环境变量" >&2
+        echo "❌ Error: JIRA_API_TOKEN environment variable not set" >&2
         return 1
     fi
 
-    echo "正在获取 $issue_key 的附件信息..." >&2
+    echo "ℹ️  Getting attachments for $issue_key..." >&2
 
-    # 保存原始输出到临时文件
+    # Save original output to temp file
     local temp_file=$(mktemp)
     jira issue view "$issue_key" --plain > "$temp_file"
 
-    # 调试：打印找到的文件
-    echo "DEBUG: 查找的文件:" >&2
-    grep -A 1 "^[[:space:]]*[0-9]\+\. log\." "$temp_file" >&2
+    # Extract attachments section to temp file
+    local attachments_file=$(mktemp)
+    sed -n '/^[[:space:]]*## \*\*Attachments\*\*/,/^[[:space:]]*## \*\*/p' "$temp_file" > "$attachments_file"
 
-    # 使用 awk 处理文件，将多行 URL 合并为单行
+    # Process attachments with awk
     local attachments=$(awk '
-        BEGIN { 
-            in_file = 0 
-            filename = ""
-            url = ""
-            RS = "\n  [0-9]+\\. "  # 使用序号作为记录分隔符
-            FS = "\n"
+        BEGIN {
+            current_file = ""
+            current_url = ""
+            in_url = 0
+            processed_urls[0] = 0  # Initialize processed URLs array
         }
-        # 只处理以 log. 开头的文件
-        $1 ~ /^log\./ {
-            filename = $1
-            gsub(/[[:space:]]*$/, "", filename)
-            
-            # 合并剩余的所有行作为URL
-            url = ""
-            for (i = 2; i <= NF; i++) {
-                if ($i ~ /^[[:space:]]*http/) {
-                    line = $i
-                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
-                    if (url == "") {
-                        url = line
-                    } else {
-                        url = url line
-                    }
+        
+        # Match file number lines
+        /^[[:space:]]*[0-9]+\.[[:space:]]/ {
+            if (current_file ~ /^log\./ && current_url != "" && current_url ~ /Key-Pair-Id=[A-Z0-9]+$/) {
+                url_key = current_file "§" current_url
+                if (!(url_key in processed_urls)) {
+                    processed_urls[url_key] = 1
+                    print url_key
                 }
             }
             
-            if (filename != "" && url != "") {
-                print filename "§" url
+            # Get new filename
+            current_file = $0
+            sub(/^[[:space:]]*[0-9]+\.[[:space:]]*/, "", current_file)
+            gsub(/[[:space:]]*$/, "", current_file)
+            current_url = ""
+            in_url = 0
+            next
+        }
+        
+        # Collect URL fragments
+        {
+            if ($0 ~ /^[[:space:]]*http/) {
+                if (current_url ~ /Key-Pair-Id=[A-Z0-9]+$/) {
+                    # If current URL is complete, start a new one
+                    current_url = ""
+                }
+                in_url = 1
+            }
+            
+            if (in_url) {
+                line = $0
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+                current_url = current_url line
             }
         }
-    ' "$temp_file" | sort | uniq)
+        
+        END {
+            if (current_file ~ /^log\./ && current_url != "" && current_url ~ /Key-Pair-Id=[A-Z0-9]+$/) {
+                url_key = current_file "§" current_url
+                if (!(url_key in processed_urls)) {
+                    processed_urls[url_key] = 1
+                    print url_key
+                }
+            }
+        }
+    ' "$attachments_file")
 
-    # 清理临时文件
-    rm "$temp_file"
+    # Clean up temp files
+    rm "$temp_file" "$attachments_file"
 
     if [ -z "$attachments" ]; then
-        echo "未找到附件" >&2
+        echo "❌ No attachments found" >&2
         return 1
     fi
 
