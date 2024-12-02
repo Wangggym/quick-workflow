@@ -3,6 +3,7 @@
 # Get attachment URLs from JIRA issue
 get_attachment_urls() {
     local issue_key="$1"
+    local filter_pattern="$2"  # Optional filter pattern, defaults to "log."
     
     # Check JIRA auth
     if [ -z "$JIRA_API_TOKEN" ]; then
@@ -21,7 +22,7 @@ get_attachment_urls() {
     awk '/^[[:space:]]*## \*\*Attachments\*\*/ {p=1; next} /^[[:space:]]*## / {if(p) exit} p' "$temp_file" > "$attachments_file"
 
     # Process attachments with awk
-    local attachments=$(awk '
+    local attachments=$(awk -v filter="$filter_pattern" '
         BEGIN {
             current_file = ""
             current_url = ""
@@ -31,7 +32,7 @@ get_attachment_urls() {
         
         # Match file number lines
         /^[[:space:]]*[0-9]+\.[[:space:]]/ {
-            if (current_file ~ /^log\./ && current_url != "") {
+            if (current_url != "" && (filter == "" || current_file ~ "^" filter)) {
                 url_key = current_file "§" current_url
                 if (!(url_key in processed_urls)) {
                     processed_urls[url_key] = 1
@@ -66,7 +67,7 @@ get_attachment_urls() {
         }
         
         END {
-            if (current_file ~ /^log\./ && current_url != "") {
+            if (current_url != "" && (filter == "" || current_file ~ "^" filter)) {
                 url_key = current_file "§" current_url
                 if (!(url_key in processed_urls)) {
                     processed_urls[url_key] = 1

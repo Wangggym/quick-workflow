@@ -30,6 +30,7 @@ download_file() {
 download_attachments() {
     local attachments="$1"
     local output_dir="$2"
+    local max_parallel=${3:-5}  # 默认最大并行数为5
 
     # Set output directory
     export OUTPUT_DIR="$output_dir"
@@ -38,15 +39,34 @@ download_attachments() {
     export -f download_file
 
     # Download all log files
-    echo "ℹ️  Starting downloads..."
+    echo "ℹ️  Starting parallel downloads..."
     local failed=0
+    local running=0
+    local pids=()
+
     while IFS='§' read -r filename url; do
-        if ! download_file "$url" "$filename"; then
-            failed=1
-            echo "⚠️  Failed to download: $filename" >&2
-            continue
-        fi
+        # 如果当前运行的进程数达到最大值，等待任意一个完成
+        while [ $running -ge $max_parallel ]; do
+            for pid in ${pids[@]}; do
+                if ! kill -0 $pid 2>/dev/null; then
+                    wait $pid || failed=1
+                    running=$((running - 1))
+                    break
+                fi
+            done
+            sleep 0.1
+        done
+
+        # 启动新的下载进程
+        download_file "$url" "$filename" &
+        pids+=($!)
+        running=$((running + 1))
     done <<< "$attachments"
+
+    # 等待所有下载完成
+    for pid in ${pids[@]}; do
+        wait $pid || failed=1
+    done
 
     # Check for download failures
     if [ $failed -eq 1 ]; then
