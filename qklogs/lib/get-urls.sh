@@ -16,9 +16,9 @@ get_attachment_urls() {
     local temp_file=$(mktemp)
     jira issue view "$issue_key" --plain > "$temp_file"
 
-    # Extract attachments section to temp file
+    # Extract attachments section to temp file - stop at the next section header
     local attachments_file=$(mktemp)
-    sed -n '/^[[:space:]]*## \*\*Attachments\*\*/,/^[[:space:]]*## \*\*/p' "$temp_file" > "$attachments_file"
+    awk '/^[[:space:]]*## \*\*Attachments\*\*/ {p=1; next} /^[[:space:]]*## / {if(p) exit} p' "$temp_file" > "$attachments_file"
 
     # Process attachments with awk
     local attachments=$(awk '
@@ -31,7 +31,7 @@ get_attachment_urls() {
         
         # Match file number lines
         /^[[:space:]]*[0-9]+\.[[:space:]]/ {
-            if (current_file ~ /^log\./ && current_url != "" && current_url ~ /Key-Pair-Id=[A-Z0-9]+$/) {
+            if (current_file ~ /^log\./ && current_url != "") {
                 url_key = current_file "§" current_url
                 if (!(url_key in processed_urls)) {
                     processed_urls[url_key] = 1
@@ -51,8 +51,8 @@ get_attachment_urls() {
         # Collect URL fragments
         {
             if ($0 ~ /^[[:space:]]*http/) {
-                if (current_url ~ /Key-Pair-Id=[A-Z0-9]+$/) {
-                    # If current URL is complete, start a new one
+                if (current_url != "") {
+                    # If current URL exists, start a new one
                     current_url = ""
                 }
                 in_url = 1
@@ -66,7 +66,7 @@ get_attachment_urls() {
         }
         
         END {
-            if (current_file ~ /^log\./ && current_url != "" && current_url ~ /Key-Pair-Id=[A-Z0-9]+$/) {
+            if (current_file ~ /^log\./ && current_url != "") {
                 url_key = current_file "§" current_url
                 if (!(url_key in processed_urls)) {
                     processed_urls[url_key] = 1
