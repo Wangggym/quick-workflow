@@ -73,4 +73,8 @@ ls -lh "$OUTPUT_DIR"
 if [ -f "$OUTPUT_DIR/merged.zip" ]; then
     echo "ℹ️  Opening merged file..."
     open "$OUTPUT_DIR/merged.zip"
+else
+    echo "ℹ️  Opening file directory..."
+    open "$OUTPUT_DIR"
 fi 
+
