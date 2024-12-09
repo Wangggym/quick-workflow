@@ -58,7 +58,16 @@ if ! download_attachments "$ATTACHMENTS" "$OUTPUT_DIR"; then
     exit 1
 fi
 
-# Step 3: Merge files
+# 检查是否只有一个 zip 文件
+ZIP_FILES=("$OUTPUT_DIR"/*.zip)
+if [ ${#ZIP_FILES[@]} -eq 1 ]; then
+    echo "✅ Single zip file found, skipping merge step"
+    echo "ℹ️  Opening zip file..."
+    open "${ZIP_FILES[0]}"
+    exit 0
+fi
+
+# Step 3: Merge files (只有多个文件时才执行)
 echo "ℹ️  Step 3: Merging files"
 if ! merge_logs "$OUTPUT_DIR"; then
     echo "❌ Merge failed" >&2
