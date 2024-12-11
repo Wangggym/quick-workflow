@@ -16,6 +16,16 @@ PROXY_ALIAS_NAME="proxy"
 PROXY_SCRIPT_PATH="$SCRIPT_DIR/check-set-proxy.sh"
 PROXY_ALIAS_COMMAND="alias $PROXY_ALIAS_NAME=\"$PROXY_SCRIPT_PATH\""
 
+# Define the new alias
+QKLOGS_ALIAS_NAME="qklogs"
+QKLOGS_SCRIPT_PATH="$SCRIPT_DIR/qklogs/qklogs.sh"
+QKLOGS_ALIAS_COMMAND="alias $QKLOGS_ALIAS_NAME=\"$QKLOGS_SCRIPT_PATH\""
+
+# Define the qkfind alias
+QKFIND_ALIAS_NAME="qkfind"
+QKFIND_SCRIPT_PATH="$SCRIPT_DIR/qkfind.sh"
+QKFIND_ALIAS_COMMAND="alias $QKFIND_ALIAS_NAME=\"$QKFIND_SCRIPT_PATH\""
+
 # Determine the user's default shell
 USER_SHELL=$(basename "$SHELL")
 
@@ -52,5 +62,11 @@ add_alias_if_not_exists "$ALIAS_NAME" "$ALIAS_COMMAND"
 
 # Add the proxy alias if it doesn't exist
 add_alias_if_not_exists "$PROXY_ALIAS_NAME" "$PROXY_ALIAS_COMMAND"
+
+# Add the qklogs alias if it doesn't exist
+add_alias_if_not_exists "$QKLOGS_ALIAS_NAME" "$QKLOGS_ALIAS_COMMAND"
+
+# Add the qkfind alias if it doesn't exist
+add_alias_if_not_exists "$QKFIND_ALIAS_NAME" "$QKFIND_ALIAS_COMMAND"
 
 echo -e "${y} Installation complete. Please run 'source $RC_FILE' or restart your terminal to use the new aliases."

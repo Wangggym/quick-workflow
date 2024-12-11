@@ -30,6 +30,14 @@ if [ ! "$choice" = "y" ]; then
     exit 0
 fi
 
-gh pr merge $pr_id --squash --delete-branch
+# 首先尝试 squash 合并
+if ! gh pr merge $pr_id --squash --delete-branch; then
+    echo -e "${y}Squash merge failed, trying normal merge...${n}"
+    # 如果 squash 合并失败，尝试普通合并
+    if ! gh pr merge $pr_id --merge --delete-branch; then
+        echo -e "${r}Both squash and normal merge failed${n}"
+        exit 1
+    fi
+fi
 
 jira_merge $pr_id
