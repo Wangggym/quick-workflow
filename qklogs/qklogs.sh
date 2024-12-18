@@ -78,16 +78,10 @@ if ! merge_logs "$OUTPUT_DIR"; then
     exit 1
 fi
 
-# 删除原始日志文件
-# rm "$OUTPUT_DIR"/log.z*
-# echo "ℹ️  Remove download files..."
-
 # Open the merged file
 if [ -f "$OUTPUT_DIR/merged.zip" ]; then
     echo "ℹ️  Opening merged file..."
-    unzip "$OUTPUT_DIR/merged.zip" -d "$OUTPUT_DIR/logs"
-    # rm "$OUTPUT_DIR/merged.zip"
-    # echo "Unzipped merged.zip and removed the file..."
+    unzip "$OUTPUT_DIR/merged.zip" -d "$OUTPUT_DIR/merged"
 
     echo "✅ All done! Files are in: $OUTPUT_DIR"
     echo "ℹ️  File list:"
