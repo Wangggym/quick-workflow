@@ -82,10 +82,6 @@ fi
 # rm "$OUTPUT_DIR"/log.z*
 # echo "ℹ️  Remove download files..."
 
-echo "✅ All done! Files are in: $OUTPUT_DIR"
-echo "ℹ️  File list:"
-ls -lh "$OUTPUT_DIR"
-
 # Open the merged file
 if [ -f "$OUTPUT_DIR/merged.zip" ]; then
     echo "ℹ️  Opening merged file..."
@@ -98,3 +94,6 @@ else
     open "$OUTPUT_DIR"
 fi
 
+echo "✅ All done! Files are in: $OUTPUT_DIR"
+echo "ℹ️  File list:"
+ls -lh "$OUTPUT_DIR"
