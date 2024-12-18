@@ -18,27 +18,35 @@ merge_logs() {
     echo "ℹ️  Found $split_count split files"
 
     # Merge using cat
-    echo "ℹ️  Merging files..."
-    if cat log.zip log.z[0-9][0-9] > merged.zip; then
-        echo "✅ Merge completed"
+    if ls log.z[0-9][0-9] 1> /dev/null 2>&1; then
+        echo "ℹ️  Merging files..."
+        if cat log.zip log.z[0-9][0-9] > merged.zip; then
+            echo "✅ Merge completed"
 
-        # Check total size of all split files
-        local total_size=0
-        for f in log.zip log.z[0-9][0-9]; do
-            local size=$(stat -f%z "$f")
-            total_size=$((total_size + size))
-        done
+            # Check total size of all split files
+            local total_size=0
+            for f in log.zip log.z[0-9][0-9]; do
+                local size=$(stat -f%z "$f")
+                total_size=$((total_size + size))
+            done
 
-        local merged_size=$(stat -f%z "merged.zip")
+            local merged_size=$(stat -f%z "merged.zip")
 
-        if [ "$merged_size" -eq "$total_size" ]; then
-            echo "✅ Merge successful: file size matches ($(du -h "merged.zip" | cut -f1))"
-        else
-            echo "⚠️  File size mismatch, but file was created" >&2
-            echo "ℹ️  Expected size: $total_size bytes"
-            echo "ℹ️  Actual size: $merged_size bytes"
+            if [ "$merged_size" -eq "$total_size" ]; then
+                echo "✅ Merge successful: file size matches ($(du -h "merged.zip" | cut -f1))"
+            else
+                echo "⚠️  File size mismatch, but file was created" >&2
+                echo "ℹ️  Expected size: $total_size bytes"
+                echo "ℹ️  Actual size: $merged_size bytes"
+            fi
+            return 0
         fi
-        return 0
+    else
+        echo "ℹ️  Only log.zip found, skipping merge"
+        if cp log.zip merged.zip; then
+            echo "✅ Single log.zip copied to merged.zip"
+            return 0
+        fi
     fi
 
     echo "❌ Merge failed"
