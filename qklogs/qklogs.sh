@@ -88,12 +88,14 @@ if [ -f "$OUTPUT_DIR/merged.zip" ]; then
     unzip "$OUTPUT_DIR/merged.zip" -d "$OUTPUT_DIR/logs"
     # rm "$OUTPUT_DIR/merged.zip"
     # echo "Unzipped merged.zip and removed the file..."
+
+    echo "✅ All done! Files are in: $OUTPUT_DIR"
+    echo "ℹ️  File list:"
+    ls -lh "$OUTPUT_DIR"
+
     open "$OUTPUT_DIR"
 else
     echo "ℹ️  Opening file directory..."
     open "$OUTPUT_DIR"
 fi
 
-echo "✅ All done! Files are in: $OUTPUT_DIR"
-echo "ℹ️  File list:"
-ls -lh "$OUTPUT_DIR"
