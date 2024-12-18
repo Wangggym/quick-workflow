@@ -12,7 +12,7 @@ merge_logs() {
     fi
 
     echo "ℹ️  Found split files, merging..."
-    
+
     # Calculate split file count
     local split_count=$(ls log.z[0-9][0-9] 2>/dev/null | wc -l)
     echo "ℹ️  Found $split_count split files"
@@ -21,16 +21,16 @@ merge_logs() {
     echo "ℹ️  Merging files..."
     if cat log.zip log.z[0-9][0-9] > merged.zip; then
         echo "✅ Merge completed"
-        
+
         # Check total size of all split files
         local total_size=0
         for f in log.zip log.z[0-9][0-9]; do
             local size=$(stat -f%z "$f")
             total_size=$((total_size + size))
         done
-        
+
         local merged_size=$(stat -f%z "merged.zip")
-        
+
         if [ "$merged_size" -eq "$total_size" ]; then
             echo "✅ Merge successful: file size matches ($(du -h "merged.zip" | cut -f1))"
         else
@@ -43,4 +43,4 @@ merge_logs() {
 
     echo "❌ Merge failed"
     return 1
-} 
+}

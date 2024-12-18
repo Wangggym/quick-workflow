@@ -25,6 +25,10 @@ fi
 ISSUE_KEY="$1"
 OUTPUT_DIR="$HOME/Downloads/logs_${ISSUE_KEY}"
 
+# Delete files if exists
+if [ -d "$OUTPUT_DIR" ]; then
+    rm -rf "$OUTPUT_DIR"
+fi
 # Create directory
 mkdir -p "$OUTPUT_DIR"
 
@@ -58,14 +62,14 @@ if ! download_attachments "$ATTACHMENTS" "$OUTPUT_DIR"; then
     exit 1
 fi
 
-# 检查是否只有一个 zip 文件
-ZIP_FILES=("$OUTPUT_DIR"/*.zip)
-if [ ${#ZIP_FILES[@]} -eq 1 ]; then
-    echo "✅ Single zip file found, skipping merge step"
-    echo "ℹ️  Opening zip file..."
-    open "${ZIP_FILES[0]}"
-    exit 0
-fi
+# # 检查是否只有一个 zip 文件
+# ZIP_FILES=("$OUTPUT_DIR"/*.zip)
+# if [ ${#ZIP_FILES[@]} -eq 1 ]; then
+#     echo "✅ Single zip file found, skipping merge step"
+#     echo "ℹ️  Opening zip file..."
+#     open "${ZIP_FILES[0]}"
+#     exit 0
+# fi
 
 # Step 3: Merge files (只有多个文件时才执行)
 echo "ℹ️  Step 3: Merging files"
@@ -74,16 +78,24 @@ if ! merge_logs "$OUTPUT_DIR"; then
     exit 1
 fi
 
-echo "✅ All done! Files are in: $OUTPUT_DIR"
-echo "ℹ️  File list:"
-ls -lh "$OUTPUT_DIR"
+# 删除原始日志文件
+# rm "$OUTPUT_DIR"/log.z*
+# echo "ℹ️  Remove download files..."
 
 # Open the merged file
 if [ -f "$OUTPUT_DIR/merged.zip" ]; then
     echo "ℹ️  Opening merged file..."
-    open "$OUTPUT_DIR/merged.zip"
+    unzip "$OUTPUT_DIR/merged.zip" -d "$OUTPUT_DIR/logs"
+    # rm "$OUTPUT_DIR/merged.zip"
+    # echo "Unzipped merged.zip and removed the file..."
+
+    echo "✅ All done! Files are in: $OUTPUT_DIR"
+    echo "ℹ️  File list:"
+    ls -lh "$OUTPUT_DIR"
+
+    open "$OUTPUT_DIR"
 else
     echo "ℹ️  Opening file directory..."
     open "$OUTPUT_DIR"
-fi 
+fi
 
