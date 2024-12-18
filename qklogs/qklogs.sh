@@ -75,8 +75,8 @@ if ! merge_logs "$OUTPUT_DIR"; then
 fi
 
 # 删除原始日志文件
-rm "$OUTPUT_DIR"/log.z*
-echo "ℹ️  Remove download files..."
+# rm "$OUTPUT_DIR"/log.z*
+# echo "ℹ️  Remove download files..."
 
 echo "✅ All done! Files are in: $OUTPUT_DIR"
 echo "ℹ️  File list:"
@@ -86,8 +86,8 @@ ls -lh "$OUTPUT_DIR"
 if [ -f "$OUTPUT_DIR/merged.zip" ]; then
     echo "ℹ️  Opening merged file..."
     unzip "$OUTPUT_DIR/merged.zip" -d "$OUTPUT_DIR"
-    rm "$OUTPUT_DIR/merged.zip"
-    echo "Unzipped merged.zip and removed the file..."
+    # rm "$OUTPUT_DIR/merged.zip"
+    # echo "Unzipped merged.zip and removed the file..."
     open "$OUTPUT_DIR"
 else
     echo "ℹ️  Opening file directory..."
