@@ -25,6 +25,10 @@ fi
 ISSUE_KEY="$1"
 OUTPUT_DIR="$HOME/Downloads/logs_${ISSUE_KEY}"
 
+# Delete files if exists
+if [ -d "$OUTPUT_DIR" ]; then
+    rm -rf "$OUTPUT_DIR"
+fi
 # Create directory
 mkdir -p "$OUTPUT_DIR"
 
@@ -85,7 +89,7 @@ ls -lh "$OUTPUT_DIR"
 # Open the merged file
 if [ -f "$OUTPUT_DIR/merged.zip" ]; then
     echo "ℹ️  Opening merged file..."
-    unzip "$OUTPUT_DIR/merged.zip" -d "$OUTPUT_DIR"
+    unzip "$OUTPUT_DIR/merged.zip" -d "$OUTPUT_DIR/logs"
     # rm "$OUTPUT_DIR/merged.zip"
     # echo "Unzipped merged.zip and removed the file..."
     open "$OUTPUT_DIR"
