@@ -45,6 +45,6 @@ awk -v rid="$request_id" '
     { 
         prev = $0 
     }
-' "$@" | tee >(eval "$CLIP_CMD")
+' "$@" | eval "$CLIP_CMD"
 
 echo "Result has been copied to clipboard!"

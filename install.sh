@@ -26,6 +26,16 @@ QKFIND_ALIAS_NAME="qkfind"
 QKFIND_SCRIPT_PATH="$SCRIPT_DIR/qkfind.sh"
 QKFIND_ALIAS_COMMAND="alias $QKFIND_ALIAS_NAME=\"$QKFIND_SCRIPT_PATH\""
 
+# Define the qksearch alias
+QKSEARCH_ALIAS_NAME="qksearch"
+QKSEARCH_SCRIPT_PATH="$SCRIPT_DIR/qksearch.sh"
+QKSEARCH_ALIAS_COMMAND="alias $QKSEARCH_ALIAS_NAME=\"$QKSEARCH_SCRIPT_PATH\""
+
+# Define the qk alias
+QK_ALIAS_NAME="qk"
+QK_SCRIPT_PATH="$SCRIPT_DIR/qk.sh"
+QK_ALIAS_COMMAND="alias $QK_ALIAS_NAME=\"$QK_SCRIPT_PATH\""
+
 # Determine the user's default shell
 USER_SHELL=$(basename "$SHELL")
 
@@ -68,5 +78,11 @@ add_alias_if_not_exists "$QKLOGS_ALIAS_NAME" "$QKLOGS_ALIAS_COMMAND"
 
 # Add the qkfind alias if it doesn't exist
 add_alias_if_not_exists "$QKFIND_ALIAS_NAME" "$QKFIND_ALIAS_COMMAND"
+
+# Add the qksearch alias if it doesn't exist
+add_alias_if_not_exists "$QKSEARCH_ALIAS_NAME" "$QKSEARCH_ALIAS_COMMAND"
+
+# Add the qk alias if it doesn't exist
+add_alias_if_not_exists "$QK_ALIAS_NAME" "$QK_ALIAS_COMMAND"
 
 echo -e "${y} Installation complete. Please run 'source $RC_FILE' or restart your terminal to use the new aliases."
