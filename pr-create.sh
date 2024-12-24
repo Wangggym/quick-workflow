@@ -14,6 +14,7 @@ source $script_dir/pr-body.sh
 source $script_dir/multiselect.sh
 source $script_dir/pr-jira.sh
 source $script_dir/jira-status.sh
+source $script_dir/generate-branch-name.sh
 
 jira_ticket=$1
 if [ -z "$jira_ticket" ]; then
@@ -66,6 +67,16 @@ branch_name=${jira_ticket}--$(echo "$issue_desc" | sed 's/[^a-zA-Z0-9]/-/g')
 if [ -z "${jira_ticket}" ]; then
     commit_title=$issue_desc
     branch_name=$(echo "$issue_desc" | sed 's/[^a-zA-Z0-9]/-/g')
+fi
+
+if [[ -n "${BRAIN_AI_KEY}" ]]; then
+    echo -e $y Start fetch branch name from AI...
+    branch_name_from_ai=$(generate_branch_name_from_input "$issue_desc" "$BRAIN_AI_KEY")
+    echo -e $y Fetch branch name from AI success $branch_name_from_ai
+    # 检查函数是否执行成功
+    if [ $? -eq 0 ]; then
+        branch_name=$branch_name_from_ai
+    fi
 fi
 
 if [ -n "${GH_BRANCH_PREFIX}" ]; then
