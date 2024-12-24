@@ -28,7 +28,7 @@ if [ -n "${jira_ticket}" ]; then
     status=$(read_status_pr_created $jira_ticket)
 fi
 
-if [ -n "${jira_ticket}" ]; then
+if [ -n "${jira_ticket}" ] && [ -n "${OPENAI_KEY}" ]; then
     issue_json=$(aiwflow issue-desc $jira_ticket)
     issue_desc=$(echo "$issue_json" | jq -r '.issue_desc')
     need_translate=$(echo "$issue_json" | jq -r '.need_translate')
@@ -69,7 +69,7 @@ if [ -z "${jira_ticket}" ]; then
     branch_name=$(echo "$issue_desc" | sed 's/[^a-zA-Z0-9]/-/g')
 fi
 
-if [[ -n "${BRAIN_AI_KEY}" ]]; then
+if [[ -n "${BRAIN_AI_KEY}" && -z "${OPENAI_KEY}" ]]; then
     echo -e Start fetch branch name from AI...
     branch_name_from_ai=$(generate_branch_name_from_input "$commit_title" "$BRAIN_AI_KEY")
     # 检查函数是否执行成功
