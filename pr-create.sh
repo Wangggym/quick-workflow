@@ -70,9 +70,9 @@ if [ -z "${jira_ticket}" ]; then
 fi
 
 if [[ -n "${BRAIN_AI_KEY}" ]]; then
-    echo -e $y Start fetch branch name from AI...
-    branch_name_from_ai=$(generate_branch_name_from_input "$issue_desc" "$BRAIN_AI_KEY")
-    echo -e $y Fetch branch name from AI success $branch_name_from_ai
+    echo -e ℹ️ Start fetch branch name from AI...
+    branch_name_from_ai=$(generate_branch_name_from_input "$commit_title" "$BRAIN_AI_KEY")
+    echo -e ✅ Fetch branch name from AI success $branch_name_from_ai
     # 检查函数是否执行成功
     if [ $? -eq 0 ]; then
         branch_name=$branch_name_from_ai

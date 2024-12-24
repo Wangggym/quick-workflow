@@ -37,7 +37,7 @@ EOF
 
     # 检查状态码
     if [ "$http_code" -ne 200 ]; then
-        echo "fetch branch name from aifailed, code: $http_code"
+        echo "❌ Fetch branch name from AI failed, code: $http_code"
         return 1
     fi
 
@@ -55,19 +55,10 @@ EOF
 
     # 检查 branch_name 是否为空
     if [ -z "$branch_name" ]; then
-        echo " Fetch branch name from aifailed, branch_name is empty"
+        echo "❌ Fetch branch name from AI failed, branch_name is empty"
         return 1
     fi
 
     echo "$branch_name"
     return 0
 }
-
-# 如果直接执行脚本，则处理命令行参数
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    if [ $# -eq 0 ]; then
-        echo "请提供分支描述文本"
-        exit 1
-    fi
-    generate_branch_name "$*"
-fi
