@@ -19,6 +19,9 @@ JIRA_ID="$1"
 ACTION="$2"
 LOGS_DIR="$HOME/Downloads/logs_${JIRA_ID}"
 LOG_FILE="$LOGS_DIR/merged/flutter-api.log"
+if [[ -n "${LOG_OUTPUT_FOLDER_NAME}" ]]; then
+    LOG_FILE="$LOGS_DIR/${LOG_OUTPUT_FOLDER_NAME}/flutter-api.log"
+fi
 
 # Function to check if logs exist
 check_logs() {
@@ -34,7 +37,7 @@ case "$ACTION" in
         # Call qklogs with full path
         "$QKLOGS_PATH" "$JIRA_ID"
         ;;
-    
+
     "-f")
         check_logs
         # Use third argument if provided, otherwise prompt
@@ -46,7 +49,7 @@ case "$ACTION" in
         fi
         "$QKFIND_PATH" "$LOG_FILE" "$REQUEST_ID"
         ;;
-    
+
     "-s")
         check_logs
         # Use third argument if provided, otherwise prompt
@@ -58,10 +61,10 @@ case "$ACTION" in
         fi
         "$QKSEARCH_PATH" "$LOG_FILE" "$SEARCH_TERM"
         ;;
-    
+
     *)
         echo "❌ Invalid action: $ACTION"
         echo "Usage: qk <JIRA-ID> [-d|-f|-s]"
         exit 1
         ;;
-esac 
+esac
