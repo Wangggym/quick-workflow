@@ -7,6 +7,26 @@ source "$SCRIPT_DIR/base.sh"
 # Make all scripts executable
 chmod +x "$SCRIPT_DIR"/*.sh
 
+# Add environment variables if they don't exist
+ENV_VARS=(
+    "EMAIL=your.email@example.com"
+    "JIRA_API_TOKEN=your_jira_api_token"
+    "JIRA_SERVICE_ADDRESS=your_jira_service_address"
+    "GH_BRANCH_PREFIX=your_branch_prefix"
+)
+
+# Function to add environment variable if it doesn't exist
+add_env_var_if_not_exists() {
+    local env_var=$1
+    local var_name="${env_var%%=*}"
+    if ! grep -q "export $var_name=" "$RC_FILE"; then
+        echo -e "${y} Adding environment variable $var_name to $RC_FILE"
+        echo "export $env_var" >> "$RC_FILE"
+    else
+        echo -e "${w} Environment variable $var_name already exists in $RC_FILE. Skipping..."
+    fi
+}
+
 # Define the aliases
 ALIAS_NAME="qkupdate"
 SCRIPT_PATH="$SCRIPT_DIR/get-pr-titile.sh"
@@ -35,6 +55,16 @@ QKSEARCH_ALIAS_COMMAND="alias $QKSEARCH_ALIAS_NAME=\"$QKSEARCH_SCRIPT_PATH\""
 QK_ALIAS_NAME="qk"
 QK_SCRIPT_PATH="$SCRIPT_DIR/qk.sh"
 QK_ALIAS_COMMAND="alias $QK_ALIAS_NAME=\"$QK_SCRIPT_PATH\""
+
+# Define the pr-create alias
+PR_CREATE_ALIAS_NAME="pr-create"
+PR_CREATE_SCRIPT_PATH="$SCRIPT_DIR/pr-create.sh"
+PR_CREATE_ALIAS_COMMAND="alias $PR_CREATE_ALIAS_NAME=\"$PR_CREATE_SCRIPT_PATH\""
+
+# Define the pr-merge alias
+PR_MERGE_ALIAS_NAME="pr-merge"
+PR_MERGE_SCRIPT_PATH="$SCRIPT_DIR/pr-merge.sh"
+PR_MERGE_ALIAS_COMMAND="alias $PR_MERGE_ALIAS_NAME=\"$PR_MERGE_SCRIPT_PATH\""
 
 # Determine the user's default shell
 USER_SHELL=$(basename "$SHELL")
@@ -85,4 +115,16 @@ add_alias_if_not_exists "$QKSEARCH_ALIAS_NAME" "$QKSEARCH_ALIAS_COMMAND"
 # Add the qk alias if it doesn't exist
 add_alias_if_not_exists "$QK_ALIAS_NAME" "$QK_ALIAS_COMMAND"
 
-echo -e "${y} Installation complete. Please run 'source $RC_FILE' or restart your terminal to use the new aliases."
+# Add the pr-create alias if it doesn't exist
+add_alias_if_not_exists "$PR_CREATE_ALIAS_NAME" "$PR_CREATE_ALIAS_COMMAND"
+
+# Add the pr-merge alias if it doesn't exist
+add_alias_if_not_exists "$PR_MERGE_ALIAS_NAME" "$PR_MERGE_ALIAS_COMMAND"
+
+# Add environment variables
+for env_var in "${ENV_VARS[@]}"; do
+    add_env_var_if_not_exists "$env_var"
+done
+
+echo -e "${y} Installation complete. Please run 'source $RC_FILE' or restart your terminal to use the new aliases and environment variables."
+echo -e "${y} Remember to update the environment variables in $RC_FILE with your actual values."
