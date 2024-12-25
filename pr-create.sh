@@ -58,15 +58,13 @@ read -p 'Short description (optional): ' short_description
 
 github_short_description=${short_description:-"Not yet"}
 
-read -p "Excution make fix? (y/n): " answer
+echo "Excution make fix? (y/n):"
 
-case $answer in
-    [Yy][Ee][Ss]|[Yy])
-        check_code_fix
-        ;;
-    *)
-        ;;
-esac
+read -n 1 answer
+
+if [[ "$answer" =~ ^[Yy]$ ]]; then
+    check_code_fix
+fi
 
 echo 'Types of changes:'
 multiselect "true" result types_of_changes preselection
