@@ -71,18 +71,21 @@ fi
 
 if [[ -n "${BRAIN_AI_KEY}" && -z "${OPENAI_KEY}" ]]; then
     start_time=$(date +%s.%N)
-    echo -e Start fetch branch name from AI...
-    branch_name_from_ai=$(generate_branch_name "$commit_title" "$BRAIN_AI_KEY")
+    generate_id=$(echo -n $commit_title | md5sum | awk '{print $1}')
+    echo -e "Start fetch branch name from AI with ID: $generate_id"
+    generate_branch_name "$commit_title" "$BRAIN_AI_KEY" "$generate_id"
     if [ $? -eq 0 ]; then
-        echo -e $y Fetch branch name from AI success $branch_name_from_ai
-        branch_name=$branch_name_from_ai
+        result=$(cat /tmp/branch_name_$generate_id.txt)
+        echo -e $y Fetch branch name from AI success $result
+        rm -f /tmp/branch_name_$generate_id.txt
+        branch_name=$result
     else
         echo -e $n Fetch branch name from AI failed $branch_name_from_ai
     fi
 
     end_time=$(date +%s.%N)
     duration=$(echo "$end_time - $start_time" | bc)
-    echo "操作时长: $duration 秒"
+    echo "Fetch branch name from AI cost: $duration 秒"
 fi
 
 if [ -n "${GH_BRANCH_PREFIX}" ]; then

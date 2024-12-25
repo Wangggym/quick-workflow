@@ -87,20 +87,26 @@ def clean_branch_name(branch_name):
 
     return branch_name
 
+def save_branch_name(result, identifier):
+    file_path = f"/tmp/branch_name_{identifier}.txt"
+    with open(file_path, 'w') as file:
+        file.write(result)
+    print(f"Branch name saved to {file_path}")
+
 if __name__ == "__main__":
-    # 从命令行参数获取输入文本和 API 密钥
     if len(sys.argv) > 2:
         input_text = sys.argv[1]
         api_key = sys.argv[2]
+        identifier = sys.argv[3]
     else:
-      print("Usage: python stream_request.py <input_text> <api_key>")
+      print("Usage: python stream_request.py <input_text> <api_key> <identifier>")
       sys.exit(1)
 
     result = make_stream_request(input_text, api_key)
     if result:
-        result = clean_branch_name(result)
+        branch_name = clean_branch_name(result)
+        save_branch_name(branch_name, identifier)
+        sys.exit(0)
     else:
-        print("Failed to get branch name")
+        print(f"Failed to get branch name {result}")
         sys.exit(1)
-    print(result)
-    sys.exit(0)

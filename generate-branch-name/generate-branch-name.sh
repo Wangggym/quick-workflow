@@ -19,42 +19,15 @@ check_dependencies() {
 
 # 执行 Python 脚本
 generate_branch_name() {
-    if [ ! -f "generate-branch-name.py" ]; then
+    if [ ! -f "$SCRIPT_DIR/generate-branch-name.py" ]; then
         echo "错误：找不到 generate-branch-name.py 文件"
-        exit 1
     fi
 
     # 将输入文本传递给 Python 脚本
-    result=$(python3 $SCRIPT_DIR/generate-branch-name.py $1 $2)
+    result=$(python3 $SCRIPT_DIR/generate-branch-name.py "$1" "$2" "$3")
 
     # 检查函数返回值
     if [ $? -ne 0 ]; then
-        echo "Generate branch name failed: $result"
-        return 1
+        echo -e $n "Generate branch name failed: $result"
     fi
-
-    echo "$result"
-    # echo "Generate branch name success: $result"
-    # echo "$result" > /tmp/branch_name_$3.txt
-
-    exit 0
 }
-
-# # 主函数
-# __main__() {
-#     check_dependencies
-#     generate_branch_name "测试一些API是否成功" "$BRAIN_AI_KEY"  # 传递第一个命令行参数
-
-#     # 读取保存的结果
-#     result=$(cat /tmp/stream_result.txt)
-
-#     # 这里可以添加对结果的进一步处理
-#     echo "处理后的结果："
-#     echo "$result"
-
-#     # 清理临时文件
-#     rm -f /tmp/stream_result.txt
-# }
-
-# # 执行主函数，传递所有命令行参数
-# __main__
