@@ -1,7 +1,6 @@
 #!/bin/bash
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/generate-branch-name.py"
 
 # 检查依赖
 check_dependencies() {
@@ -26,7 +25,7 @@ generate_branch_name() {
     fi
 
     # 将输入文本传递给 Python 脚本
-    result=$(python3 generate-branch-name.py $1 $2)
+    result=$(python3 $SCRIPT_DIR/generate-branch-name.py $1 $2)
 
     # 检查函数返回值
     if [ $? -ne 0 ]; then

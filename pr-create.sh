@@ -89,25 +89,25 @@ if [ -n "${GH_BRANCH_PREFIX}" ]; then
     branch_name=${GH_BRANCH_PREFIX}/${branch_name}
 fi
 
-echo $branch_name
-echo $commit_title
-echo $pr_body
-# git checkout -b $branch_name
+# echo $branch_name
+# echo $commit_title
+# echo $pr_body
+git checkout -b $branch_name
 
-# # We have checked the commit at `check-pre-commit`, so we do not need to verify it again.
-# git commit -m "${commit_title}" --no-verify
-# git push -u origin $branch_name
+# We have checked the commit at `check-pre-commit`, so we do not need to verify it again.
+git commit -m "${commit_title}" --no-verify
+git push -u origin $branch_name
 
-# pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H $branch_name)
+pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H $branch_name)
 
-# if [ -n "${jira_ticket}" ]; then
-#     jira_create "$jira_ticket" "$pr_url" "$status" "$short_description"
-# fi
+if [ -n "${jira_ticket}" ]; then
+    jira_create "$jira_ticket" "$pr_url" "$status" "$short_description"
+fi
 
-# echo $pr_url | pbcopy
-# echo -e $y Successfully copied $pr_url to clipboard
+echo $pr_url | pbcopy
+echo -e $y Successfully copied $pr_url to clipboard
 
-# # Clearly show users the copied information, sleep 1 second
-# sleep 1
+# Clearly show users the copied information, sleep 1 second
+sleep 1
 
-# open $pr_url
+open $pr_url
