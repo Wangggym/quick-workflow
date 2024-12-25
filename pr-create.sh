@@ -85,7 +85,7 @@ if [[ -n "${BRAIN_AI_KEY}" && -z "${OPENAI_KEY}" ]]; then
 
     end_time=$(date +%s.%N)
     duration=$(echo "$end_time - $start_time" | bc)
-    echo "Fetch branch name from AI cost: $duration 秒"
+    echo "Fetch branch name cost $duration seconds"
 fi
 
 if [ -n "${GH_BRANCH_PREFIX}" ]; then
