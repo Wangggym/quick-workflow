@@ -14,7 +14,7 @@ source $script_dir/pr-body.sh
 source $script_dir/multiselect.sh
 source $script_dir/pr-jira.sh
 source $script_dir/jira-status.sh
-source $script_dir/generate-branch-name.sh
+source $script_dir/generate-branch-name/generate-branch-name.sh
 
 jira_ticket=$1
 if [ -z "$jira_ticket" ]; then
@@ -70,40 +70,44 @@ if [ -z "${jira_ticket}" ]; then
 fi
 
 if [[ -n "${BRAIN_AI_KEY}" && -z "${OPENAI_KEY}" ]]; then
+    start_time=$(date +%s.%N)
     echo -e Start fetch branch name from AI...
-    branch_name_from_ai=$(generate_branch_name_from_input "$commit_title" "$BRAIN_AI_KEY")
-    # 检查函数是否执行成功
+    branch_name_from_ai=$(generate_branch_name "$commit_title" "$BRAIN_AI_KEY")
     if [ $? -eq 0 ]; then
         echo -e $y Fetch branch name from AI success $branch_name_from_ai
         branch_name=$branch_name_from_ai
     else
-        echo -e $n Fetch branch name from AI failed
+        echo -e $n Fetch branch name from AI failed $branch_name_from_ai
     fi
+
+    end_time=$(date +%s.%N)
+    duration=$(echo "$end_time - $start_time" | bc)
+    echo "操作时长: $duration 秒"
 fi
 
 if [ -n "${GH_BRANCH_PREFIX}" ]; then
     branch_name=${GH_BRANCH_PREFIX}/${branch_name}
 fi
 
-# echo $branch_name
-# echo $commit_title
-# echo $pr_body
-git checkout -b $branch_name
+echo $branch_name
+echo $commit_title
+echo $pr_body
+# git checkout -b $branch_name
 
-# We have checked the commit at `check-pre-commit`, so we do not need to verify it again.
-git commit -m "${commit_title}" --no-verify
-git push -u origin $branch_name
+# # We have checked the commit at `check-pre-commit`, so we do not need to verify it again.
+# git commit -m "${commit_title}" --no-verify
+# git push -u origin $branch_name
 
-pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H $branch_name)
+# pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H $branch_name)
 
-if [ -n "${jira_ticket}" ]; then
-    jira_create "$jira_ticket" "$pr_url" "$status" "$short_description"
-fi
+# if [ -n "${jira_ticket}" ]; then
+#     jira_create "$jira_ticket" "$pr_url" "$status" "$short_description"
+# fi
 
-echo $pr_url | pbcopy
-echo -e $y Successfully copied $pr_url to clipboard
+# echo $pr_url | pbcopy
+# echo -e $y Successfully copied $pr_url to clipboard
 
-# Clearly show users the copied information, sleep 1 second
-sleep 1
+# # Clearly show users the copied information, sleep 1 second
+# sleep 1
 
-open $pr_url
+# open $pr_url
