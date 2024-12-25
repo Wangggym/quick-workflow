@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# Import base functions
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# LIB_DIR="$SCRIPT_DIR/generate-branch-name"
 source "$SCRIPT_DIR/generate-branch-name.py"
 
 # 检查依赖
