@@ -15,7 +15,6 @@ source $script_dir/multiselect.sh
 source $script_dir/pr-jira.sh
 source $script_dir/jira-status.sh
 source $script_dir/generate-branch-name/generate-branch-name.sh
-source $script_dir/check-code-fix.sh
 
 jira_ticket=$1
 if [ -z "$jira_ticket" ]; then
@@ -57,14 +56,6 @@ done
 read -p 'Short description (optional): ' short_description
 
 github_short_description=${short_description:-"Not yet"}
-
-echo "Excution make fix? (y/n):"
-
-read -n 1 answer
-
-if [[ "$answer" =~ ^[Yy]$ ]]; then
-    check_code_fix
-fi
 
 echo 'Types of changes:'
 multiselect "true" result types_of_changes preselection
