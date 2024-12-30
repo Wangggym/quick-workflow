@@ -121,6 +121,20 @@ add_alias_if_not_exists "$PR_CREATE_ALIAS_NAME" "$PR_CREATE_ALIAS_COMMAND"
 # Add the pr-merge alias if it doesn't exist
 add_alias_if_not_exists "$PR_MERGE_ALIAS_NAME" "$PR_MERGE_ALIAS_COMMAND"
 
+# 检查依赖
+check_dependencies() {
+    if ! command -v python3 &> /dev/null; then
+        echo "错误：未安装 Python3"
+    fi
+
+    python3 -c "import requests" 2>/dev/null || {
+        echo "正在安装 requests 包..."
+        pip3 install requests
+    }
+}
+
+check_dependencies
+
 # Add environment variables
 for env_var in "${ENV_VARS[@]}"; do
     add_env_var_if_not_exists "$env_var"

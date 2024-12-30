@@ -73,6 +73,8 @@ alias pr-merge=/Users/xxx/xxx/quick-workflow/pr-merge.sh
 export JIRA_SERVICE_ADDRESS=https://xxx.xx # Your Jira network address
 export JIRA_API_TOKEN=xxx
 
+export BRAIN_AI_KEY=xxx # Your Brain AI key, Use to generate branch name
+
 # Optional
 # Generate the custom branch prefix name
 # export GH_BRANCH_PREFIX=xx # xx/jira_ticket--desc

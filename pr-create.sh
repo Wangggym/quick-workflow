@@ -14,6 +14,7 @@ source $script_dir/pr-body.sh
 source $script_dir/multiselect.sh
 source $script_dir/pr-jira.sh
 source $script_dir/jira-status.sh
+source $script_dir/generate-branch-name/generate-branch-name.sh
 
 jira_ticket=$1
 if [ -z "$jira_ticket" ]; then
@@ -27,7 +28,7 @@ if [ -n "${jira_ticket}" ]; then
     status=$(read_status_pr_created $jira_ticket)
 fi
 
-if [ -n "${jira_ticket}" ]; then
+if [ -n "${jira_ticket}" ] && [ -n "${OPENAI_KEY}" ]; then
     issue_json=$(aiwflow issue-desc $jira_ticket)
     issue_desc=$(echo "$issue_json" | jq -r '.issue_desc')
     need_translate=$(echo "$issue_json" | jq -r '.need_translate')
@@ -66,6 +67,24 @@ branch_name=${jira_ticket}--$(echo "$issue_desc" | sed 's/[^a-zA-Z0-9]/-/g')
 if [ -z "${jira_ticket}" ]; then
     commit_title=$issue_desc
     branch_name=$(echo "$issue_desc" | sed 's/[^a-zA-Z0-9]/-/g')
+fi
+
+if [[ -n "${BRAIN_AI_KEY}" && -z "${OPENAI_KEY}" ]]; then
+    start_time=$(date +%s.%N)
+    generate_id=$(echo -n $commit_title | md5sum | awk '{print $1}')
+    echo -e "Start fetch branch name from AI with ID: $generate_id"
+    generate_branch_name "$commit_title" "$BRAIN_AI_KEY" "$generate_id"
+
+    result=$(cat /tmp/branch_name_$generate_id.txt)
+    echo -e $y Fetch branch name from AI success $result
+    rm -f /tmp/branch_name_$generate_id.txt
+    if [ -n "$result" ]; then
+        branch_name=$result
+    fi
+
+    end_time=$(date +%s.%N)
+    duration=$(echo "$end_time - $start_time" | bc)
+    echo "Fetch branch name cost $duration seconds"
 fi
 
 if [ -n "${GH_BRANCH_PREFIX}" ]; then
