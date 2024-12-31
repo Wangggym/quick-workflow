@@ -18,9 +18,23 @@ QKSEARCH_PATH="$SCRIPT_DIR/qksearch.sh"
 JIRA_ID="$1"
 ACTION="$2"
 LOGS_DIR="$HOME/Downloads/logs_${JIRA_ID}"
-LOG_FILE="$LOGS_DIR/merged/flutter-api.log"
+
+# Function to find log file
+find_log_file() {
+    local base_dir="$1"
+    local log_file=$(find "$base_dir" -maxdepth 1 -type f -name "flutter-api*.log" | head -n 1)
+    
+    if [[ -n "$log_file" ]]; then
+        echo "$log_file"
+    else
+        echo "$base_dir/flutter-api.log"
+    fi
+}
+
 if [[ -n "${LOG_OUTPUT_FOLDER_NAME}" ]]; then
-    LOG_FILE="$LOGS_DIR/${LOG_OUTPUT_FOLDER_NAME}/flutter-api.log"
+    LOG_FILE=$(find_log_file "$LOGS_DIR/${LOG_OUTPUT_FOLDER_NAME}")
+else
+    LOG_FILE=$(find_log_file "$LOGS_DIR/merged")
 fi
 
 # Function to check if logs exist
