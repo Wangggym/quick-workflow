@@ -21,6 +21,8 @@ LOGS_DIR="$HOME/Downloads/logs_${JIRA_ID}"
 LOG_FILE="$LOGS_DIR/merged/flutter-api.log"
 if [[ -n "${LOG_OUTPUT_FOLDER_NAME}" ]]; then
     LOG_FILE="$LOGS_DIR/${LOG_OUTPUT_FOLDER_NAME}/flutter-api.log"
+else
+    LOG_FILE="$LOGS_DIR/merged/flutter-api.log"
 fi
 
 # Function to check if logs exist
