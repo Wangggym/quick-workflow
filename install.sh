@@ -23,7 +23,7 @@ add_env_var_if_not_exists() {
         echo -e "${y} Adding environment variable $var_name to $RC_FILE"
         echo "export $env_var" >> "$RC_FILE"
     else
-        echo -e "${w} Environment variable $var_name already exists in $RC_FILE. Skipping..."
+        echo -e "${y} Environment variable $var_name already exists in $RC_FILE. Skipping..."
     fi
 }
 
@@ -93,7 +93,7 @@ add_alias_if_not_exists() {
         echo -e "${y} Adding alias $alias_name to $RC_FILE"
         echo "$alias_command" >> "$RC_FILE"
     else
-        echo -e "${w} Alias $alias_name already exists in $RC_FILE. Skipping..."
+        echo -e "${y} Alias $alias_name already exists in $RC_FILE. Skipping..."
     fi
 }
 
