@@ -5,6 +5,11 @@ handle_single_zip_file() {
     local output_dir="$1"
     local log_output_folder_name="$2"
     
+    # 检查是否存在分卷压缩文件（.z01, .z02 等）
+    if ls "$output_dir"/*.z[0-9][0-9] 1> /dev/null 2>&1; then
+        return 1
+    fi
+    
     # 检查是否只有一个 zip 文件
     local zip_files=("$output_dir"/*.zip)
     if [ ${#zip_files[@]} -eq 1 ]; then

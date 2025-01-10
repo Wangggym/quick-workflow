@@ -74,6 +74,25 @@ test_no_zip_files() {
     fi
 }
 
+# 测试：存在分卷压缩文件的情况
+test_split_zip_files() {
+    local test_name="test_split_zip_files"
+    echo "Running $test_name..."
+    
+    # 创建测试数据：模拟分卷压缩文件
+    touch "$TEST_DIR/output/test.zip"
+    touch "$TEST_DIR/output/test.z01"
+    touch "$TEST_DIR/output/test.z02"
+    
+    # 运行测试
+    if ! handle_single_zip_file "$TEST_DIR/output" "test_logs"; then
+        echo "✅ $test_name: PASSED"
+    else
+        echo "❌ $test_name: FAILED - Expected failure for split zip files"
+        return 1
+    fi
+}
+
 # 运行所有测试
 run_tests() {
     setup
@@ -82,6 +101,7 @@ run_tests() {
     test_single_zip_file || failed=1
     test_multiple_zip_files || failed=1
     test_no_zip_files || failed=1
+    test_split_zip_files || failed=1
     
     cleanup
     
