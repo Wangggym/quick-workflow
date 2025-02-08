@@ -13,6 +13,10 @@ ENV_VARS=(
     "JIRA_API_TOKEN=your_jira_api_token"
     "JIRA_SERVICE_ADDRESS=your_jira_service_address"
     "GH_BRANCH_PREFIX=your_branch_prefix"
+    "OPENAI_KEY=your_openai_api_key"
+    "DEEPSEEK_KEY=your_deepseek_api_key"
+    "OPENAI_PROXY_URL=your_openai_proxy_url"
+    "OPENAI_PROXY_KEY=your_openai_proxy_key"
 )
 
 # Function to add environment variable if it doesn't exist
@@ -121,24 +125,24 @@ add_alias_if_not_exists "$PR_CREATE_ALIAS_NAME" "$PR_CREATE_ALIAS_COMMAND"
 # Add the pr-merge alias if it doesn't exist
 add_alias_if_not_exists "$PR_MERGE_ALIAS_NAME" "$PR_MERGE_ALIAS_COMMAND"
 
+# Add environment variables
+for env_var in "${ENV_VARS[@]}"; do
+    add_env_var_if_not_exists "$env_var"
+done
+
 # 检查依赖
 check_dependencies() {
     if ! command -v python3 &> /dev/null; then
         echo "错误：未安装 Python3"
     fi
 
-    python3 -c "import requests" 2>/dev/null || {
-        echo "正在安装 requests 包..."
-        pip3 install requests
+    python3 -c "import aiwflow" 2>/dev/null || {
+        echo "正在安装 aiwflow 包..."
+        pip install aiwflow
     }
 }
 
 check_dependencies
-
-# Add environment variables
-for env_var in "${ENV_VARS[@]}"; do
-    add_env_var_if_not_exists "$env_var"
-done
 
 echo -e "${y} Installation complete. Please run 'source $RC_FILE' or restart your terminal to use the new aliases and environment variables."
 echo -e "${y} Remember to update the environment variables in $RC_FILE with your actual values."
