@@ -30,10 +30,10 @@ fi
 
 if [ -n "${jira_ticket}" ]; then
     output=$(aiwflow issue-desc $jira_ticket)
-    proxy_info=$(echo "$output" | head -n 1)
+    ai_info=$(echo "$output" | head -n 1)
     issue_json=$(echo "$output" | tail -n +2)
     
-    echo "$proxy_info"  # 显示给用户看代理信息
+    echo "$ai_info"
 
     issue_desc=$(echo "$issue_json" | jq -r '.issue_desc')
     need_translate=$(echo "$issue_json" | jq -r '.need_translate')

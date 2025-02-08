@@ -13,6 +13,10 @@ ENV_VARS=(
     "JIRA_API_TOKEN=your_jira_api_token"
     "JIRA_SERVICE_ADDRESS=your_jira_service_address"
     "GH_BRANCH_PREFIX=your_branch_prefix"
+    "OPENAI_KEY=your_openai_api_key"
+    "DEEPSEEK_KEY=your_deepseek_api_key"
+    "OPENAI_PROXY_URL=your_openai_proxy_url"
+    "OPENAI_PROXY_KEY=your_openai_proxy_key"
 )
 
 # Function to add environment variable if it doesn't exist
@@ -127,9 +131,9 @@ check_dependencies() {
         echo "错误：未安装 Python3"
     fi
 
-    python3 -c "import requests" 2>/dev/null || {
-        echo "正在安装 requests 包..."
-        pip3 install requests
+    python3 -c "import aiwflow" 2>/dev/null || {
+        echo "正在安装 aiwflow 包..."
+        pip3 install aiwflow
     }
 }
 
