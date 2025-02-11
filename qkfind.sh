@@ -25,7 +25,8 @@ fi
 # Use awk to find and extract the response content and copy to clipboard
 awk -v rid="$request_id" '
     /response:/ { 
-        if (prev ~ rid) {
+        # Look for exact match of request ID
+        if (prev ~ "#" rid) {
             # Print everything after "response: " until the next empty line
             gsub(/^.*response: /, "")
             p = 1
