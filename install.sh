@@ -140,6 +140,20 @@ check_dependencies() {
         echo "正在安装 aiwflow 包..."
         pip install aiwflow
     }
+
+    # 检查并安装 bun
+    if ! command -v bun &> /dev/null; then
+        echo "正在安装 bun..."
+        curl -fsSL https://bun.sh/install | bash
+        # 重新加载环境变量以使 bun 命令可用
+        source "$RC_FILE"
+    fi
+
+    # 安装 streamock
+    if ! command -v streamock &> /dev/null; then
+        echo "正在安装 streamock..."
+        bun install -g streamock
+    fi
 }
 
 check_dependencies
