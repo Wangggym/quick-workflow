@@ -22,14 +22,6 @@ while [ -z "$pr_id" ]; do
     read -p 'PR id(require): ' pr_id
 done
 
-echo 'Do you want to continue merging PR? (y/n)'
-
-read choice
-
-if [ ! "$choice" = "y" ]; then
-    exit 0
-fi
-
 # 首先尝试 squash 合并
 if ! gh pr merge $pr_id --squash --delete-branch; then
     echo -e "${y}Squash merge failed, trying normal merge...${n}"
