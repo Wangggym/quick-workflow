@@ -61,7 +61,7 @@ case "$ACTION" in
             echo -n "Enter request ID to find: "
             read REQUEST_ID
         fi
-        "$QKFIND_PATH" "$LOG_FILE" "$REQUEST_ID"
+        "$QKFIND_PATH" "$LOG_FILE" "$REQUEST_ID" "$JIRA_ID"
         ;;
 
     "-s")
