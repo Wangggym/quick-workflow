@@ -53,6 +53,8 @@ name=$(awk -v rid="$request_id" '
 # If name is empty, use a default value
 if [ -z "$name" ]; then
     name="unknown"
+else
+    name="#${request_id} ${name}"
 fi
 
 # Detect the operating system and choose the appropriate clipboard command

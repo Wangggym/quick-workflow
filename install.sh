@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Source the base.sh file
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 source "$SCRIPT_DIR/base.sh"
 
 # Make all scripts executable
@@ -25,7 +25,7 @@ add_env_var_if_not_exists() {
     local var_name="${env_var%%=*}"
     if ! grep -q "export $var_name=" "$RC_FILE"; then
         echo -e "${y} Adding environment variable $var_name to $RC_FILE"
-        echo "export $env_var" >> "$RC_FILE"
+        echo "export $env_var" >>"$RC_FILE"
     else
         echo -e "${y} Environment variable $var_name already exists in $RC_FILE. Skipping..."
     fi
@@ -75,18 +75,18 @@ USER_SHELL=$(basename "$SHELL")
 
 # Determine the correct rc file
 case "$USER_SHELL" in
-    zsh)
-        RC_FILE="$HOME/.zshrc"
-        echo -e "${y} Detected Zsh as the default shell"
-        ;;
-    bash)
-        RC_FILE="$HOME/.bashrc"
-        echo -e "${y} Detected Bash as the default shell"
-        ;;
-    *)
-        echo -e "${n} Unsupported shell: $USER_SHELL. Please add the aliases manually to your shell's rc file."
-        exit 1
-        ;;
+zsh)
+    RC_FILE="$HOME/.zshrc"
+    echo -e "${y} Detected Zsh as the default shell"
+    ;;
+bash)
+    RC_FILE="$HOME/.bashrc"
+    echo -e "${y} Detected Bash as the default shell"
+    ;;
+*)
+    echo -e "${n} Unsupported shell: $USER_SHELL. Please add the aliases manually to your shell's rc file."
+    exit 1
+    ;;
 esac
 
 # Function to add an alias only if it doesn't exist
@@ -95,7 +95,7 @@ add_alias_if_not_exists() {
     local alias_command=$2
     if ! grep -q "alias $alias_name=" "$RC_FILE"; then
         echo -e "${y} Adding alias $alias_name to $RC_FILE"
-        echo "$alias_command" >> "$RC_FILE"
+        echo "$alias_command" >>"$RC_FILE"
     else
         echo -e "${y} Alias $alias_name already exists in $RC_FILE. Skipping..."
     fi
@@ -132,7 +132,7 @@ done
 
 # 检查依赖
 check_dependencies() {
-    if ! command -v python3 &> /dev/null; then
+    if ! command -v python3 &>/dev/null; then
         echo "错误：未安装 Python3"
     fi
 
@@ -142,18 +142,15 @@ check_dependencies() {
     }
 
     # 检查并安装 bun
-    if ! command -v bun &> /dev/null; then
+    if ! command -v bun &>/dev/null; then
         echo "正在安装 bun..."
         curl -fsSL https://bun.sh/install | bash
         # 重新加载环境变量以使 bun 命令可用
         source "$RC_FILE"
     fi
 
-    # 安装 streamock
-    if ! command -v streamock &> /dev/null; then
-        echo "正在安装 streamock..."
-        bun install -g streamock
-    fi
+    echo "正在安装 streamock..."
+    bun install -g streamock
 }
 
 check_dependencies
