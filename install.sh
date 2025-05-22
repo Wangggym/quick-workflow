@@ -70,6 +70,11 @@ PR_MERGE_ALIAS_NAME="pr-merge"
 PR_MERGE_SCRIPT_PATH="$SCRIPT_DIR/pr-merge.sh"
 PR_MERGE_ALIAS_COMMAND="alias $PR_MERGE_ALIAS_NAME=\"$PR_MERGE_SCRIPT_PATH\""
 
+# Define the qkpy alias
+QKPY_ALIAS_NAME="qkpy"
+QKPY_SCRIPT_PATH="$SCRIPT_DIR/qkpy.sh"
+QKPY_ALIAS_COMMAND="alias $QKPY_ALIAS_NAME=\"$QKPY_SCRIPT_PATH\""
+
 # Determine the user's default shell
 USER_SHELL=$(basename "$SHELL")
 
@@ -124,6 +129,9 @@ add_alias_if_not_exists "$PR_CREATE_ALIAS_NAME" "$PR_CREATE_ALIAS_COMMAND"
 
 # Add the pr-merge alias if it doesn't exist
 add_alias_if_not_exists "$PR_MERGE_ALIAS_NAME" "$PR_MERGE_ALIAS_COMMAND"
+
+# Add the qkpy alias if it doesn't exist
+add_alias_if_not_exists "$QKPY_ALIAS_NAME" "$QKPY_ALIAS_COMMAND"
 
 # Add environment variables
 for env_var in "${ENV_VARS[@]}"; do

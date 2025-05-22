@@ -86,6 +86,17 @@ After installation, you'll have access to the following commands:
 - `qksearch`: Quick search utility
 - `qk`: Quick workflow utility
 
+### Python 快速运行工具
+
+- `qkpy.sh` 或 `qkpy`: 便捷运行 Python 脚本，自动设置 `PYTHONPATH` 为当前目录，适合需要引用本地包的情况。
+
+**用法示例：**
+```shell
+./qkpy.sh src/case/planning/travel_extractor.py
+# 或
+qkpy src/case/planning/travel_extractor.py
+```
+
 ### Updates
 
 See `todolist.md` for the latest updates and other important information.
