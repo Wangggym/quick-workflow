@@ -4,9 +4,10 @@
 # 参数：--title "标题" --body "描述" -H 源分支 --base 目标分支
 
 # 自动加载 .env 文件（如果存在）
-if [ -f .env ]; then
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$script_dir/.env" ]; then
   set -o allexport
-  source .env
+  source "$script_dir/.env"
   set +o allexport
 fi
 
@@ -66,12 +67,33 @@ elif [[ "$git_url" == *$codeup_pattern* ]]; then
     echo "[Error] 缺少 Codeup 所需的环境变量 (CODEUP_PROJECT_ID, CODEUP_CSRF_TOKEN, CODEUP_COOKIE)"
     exit 2
   fi
+  data_raw=$(cat <<EOF
+{
+  "source_project_id": ${CODEUP_PROJECT_ID},
+  "target_project_id": ${CODEUP_PROJECT_ID},
+  "source_branch": "${branch_name}",
+  "target_branch": "${base_branch}",
+  "title": "${commit_title}",
+  "description": "${pr_body}",
+  "tb_user_ids": [],
+  "reviewer_user_ids": [],
+  "create_from": "WEB"
+}
+EOF
+  )
+
+  # echo "curl --location --request POST 'https://codeup.aliyun.com/api/v4/projects/${CODEUP_PROJECT_ID}/code_reviews?_csrf=${CODEUP_CSRF_TOKEN}&_input_charset=utf-8' \
+  # --header 'X-Requested-With: XMLHttpRequest' \
+  # --header 'Cookie: ${CODEUP_COOKIE}' \
+  # --header 'Content-Type: application/json' \
+  # --data-raw '$(echo "$data_raw")'" >&2
+
   response=$(curl -s --location --request POST "https://codeup.aliyun.com/api/v4/projects/${CODEUP_PROJECT_ID}/code_reviews?_csrf=${CODEUP_CSRF_TOKEN}&_input_charset=utf-8" \
     --header 'X-Requested-With: XMLHttpRequest' \
     --header "Cookie: ${CODEUP_COOKIE}" \
     --header 'Content-Type: application/json' \
-    --data-raw "{\n    \"source_project_id\": ${CODEUP_PROJECT_ID},\n    \"target_project_id\": ${CODEUP_PROJECT_ID},\n    \"source_branch\": \"${branch_name}\",\n    \"target_branch\": \"${base_branch}\",\n    \"title\": \"${commit_title}\",\n    \"description\": \"${pr_body}\",\n    \"tb_user_ids\": [],\n    \"reviewer_user_ids\": [],\n    \"create_from\": \"WEB\"\n  }")
-  pr_url=$(echo "$response" | jq -r '.web_url // .data.web_url // empty')
+    --data-raw "$data_raw")
+  pr_url=$(echo "$response" | jq -r '.detail_url // empty')
   if [[ -z "$pr_url" ]]; then
     echo "$response"
     echo "[Error] 未能获取 PR URL，请检查 API 响应。"
