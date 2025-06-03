@@ -87,7 +87,7 @@ git checkout -b $branch_name
 git commit -m "${commit_title}" --no-verify
 git push -u origin $branch_name
 
-pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H $branch_name)
+pr_url=$("$script_dir/pr-create-universal.sh" --title "${commit_title}" --body "${pr_body}" -H "$branch_name")
 
 if [ -n "${jira_ticket}" ]; then
     jira_create "$jira_ticket" "$pr_url" "$status" "$short_description"
