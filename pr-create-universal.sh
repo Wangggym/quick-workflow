@@ -55,7 +55,7 @@ codeup_pattern="codeup.aliyun.com"
 if [[ "$git_url" == *$github_pattern* ]]; then
   # echo "GitHub 仓库"
   # GitHub 仓库，调用 gh pr create
-  pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H "$branch_name" --base "$base_branch")
+  pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H "$branch_name")
   echo "$pr_url"
   exit 0
 elif [[ "$git_url" == *$codeup_pattern* ]]; then
