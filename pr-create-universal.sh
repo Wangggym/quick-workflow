@@ -53,13 +53,13 @@ github_pattern="github.com"
 codeup_pattern="codeup.aliyun.com"
 
 if [[ "$git_url" == *$github_pattern* ]]; then
-  echo "GitHub 仓库"
+  # echo "GitHub 仓库"
   # GitHub 仓库，调用 gh pr create
   pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H "$branch_name" --base "$base_branch")
   echo "$pr_url"
   exit 0
 elif [[ "$git_url" == *$codeup_pattern* ]]; then
-  echo "Codeup 仓库"
+  # echo "Codeup 仓库"
   # Codeup 仓库，调用 Codeup API
   # 需要环境变量: CODEUP_PROJECT_ID, CODEUP_CSRF_TOKEN, CODEUP_COOKIE
   if [[ -z "$CODEUP_PROJECT_ID" || -z "$CODEUP_CSRF_TOKEN" || -z "$CODEUP_COOKIE" ]]; then
