@@ -25,7 +25,7 @@ else
   echo "[Error] 未知的仓库类型：$git_url"
 fi
 
-if [ -n "$pr_title" ]; then
+if [ -n "$pr_title" ]; then 
     echo -e "${y} get pr title: $pr_title"
     git add --all && git commit -m "$pr_title" && git push
 else
