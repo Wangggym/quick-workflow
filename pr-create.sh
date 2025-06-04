@@ -60,7 +60,7 @@ done
 
 read -p 'Short description (optional): ' short_description
 
-github_short_description=${short_description:-"Not yet"}
+github_short_description=${short_description}
 
 echo 'Types of changes:'
 multiselect "true" result types_of_changes preselection
@@ -87,7 +87,14 @@ git checkout -b $branch_name
 git commit -m "${commit_title}" --no-verify
 git push -u origin $branch_name
 
-pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H $branch_name)
+pr_url=$("$script_dir/pr-create-universal.sh" --title "${commit_title}" --body "${pr_body}" -H "$branch_name")
+ret=$?
+
+if [ $ret -ne 0 ] || [[ -z "$pr_url" ]] || [[ "$pr_url" == *"[Error]"* ]]; then
+    echo $pr_url
+    echo -e $n "PR creation failed, aborting further actions."
+    exit 1
+fi
 
 if [ -n "${jira_ticket}" ]; then
     jira_create "$jira_ticket" "$pr_url" "$status" "$short_description"
