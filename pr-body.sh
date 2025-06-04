@@ -19,22 +19,15 @@ function getPRbody {
         fi
     done
 
-    pr_body="
-# PR Ready\n
+    pr_body="\n# PR Ready\n\n## Types of changes\n\n$formatted_output\n"
 
-## Types of changes\n
+    if [ -n "$2" ]; then
+        pr_body+="\n#### Short description:\n\n$2\n"
+    fi
 
-$formatted_output
+    if [ -n "$3" ]; then
+        pr_body+="\n#### Jira Link:\n\n${JIRA_SERVICE_ADDRESS}/browse/$3\n"
+    fi
 
-#### Short description:\n
-
-$2\n
-
-#### Jira Link:\n
-
-${JIRA_SERVICE_ADDRESS}/browse/$3\n
-
-#### Dependency\n
-"
     echo -e "$pr_body"
 }

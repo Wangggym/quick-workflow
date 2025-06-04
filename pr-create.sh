@@ -60,7 +60,7 @@ done
 
 read -p 'Short description (optional): ' short_description
 
-github_short_description=${short_description:-"Not yet"}
+github_short_description=${short_description}
 
 echo 'Types of changes:'
 multiselect "true" result types_of_changes preselection
