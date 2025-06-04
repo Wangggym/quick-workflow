@@ -1,15 +1,14 @@
 #!/bin/bash
 
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+source "$script_dir/env_load.sh"
+source "$script_dir/repo_type.sh"
+
 # 通用 PR 创建脚本
 # 参数：--title "标题" --body "描述" -H 源分支 --base 目标分支
 
 # 自动加载 .env 文件（如果存在）
-script_dir="$(cd "$(dirname "$0")" && pwd)"
-if [ -f "$script_dir/.env" ]; then
-  set -o allexport
-  source "$script_dir/.env"
-  set +o allexport
-fi
+# (已由 env_load.sh 实现)
 
 # 解析参数
 while [[ $# -gt 0 ]]; do
@@ -49,18 +48,13 @@ if [[ -z "$git_url" ]]; then
   exit 1
 fi
 
-# 判断仓库类型
-github_pattern="github.com"
-codeup_pattern="codeup.aliyun.com"
-
-if [[ "$git_url" == *$github_pattern* ]]; then
-  # echo "GitHub 仓库"
+# 用 repo_type 变量判断仓库类型
+if [[ "$repo_type" == "github" ]]; then
   # GitHub 仓库，调用 gh pr create
   pr_url=$(gh pr create --title "${commit_title}" --body "${pr_body}" -H "$branch_name")
   echo "$pr_url"
   exit 0
-elif [[ "$git_url" == *$codeup_pattern* ]]; then
-  # echo "Codeup 仓库"
+elif [[ "$repo_type" == "codeup" ]]; then
   # Codeup 仓库，调用 Codeup API
   # 需要环境变量: CODEUP_PROJECT_ID, CODEUP_CSRF_TOKEN, CODEUP_COOKIE
   if [[ -z "$CODEUP_PROJECT_ID" || -z "$CODEUP_CSRF_TOKEN" || -z "$CODEUP_COOKIE" ]]; then
@@ -81,12 +75,6 @@ elif [[ "$git_url" == *$codeup_pattern* ]]; then
 }
 EOF
   )
-
-  # echo "curl --location --request POST 'https://codeup.aliyun.com/api/v4/projects/${CODEUP_PROJECT_ID}/code_reviews?_csrf=${CODEUP_CSRF_TOKEN}&_input_charset=utf-8' \
-  # --header 'X-Requested-With: XMLHttpRequest' \
-  # --header 'Cookie: ${CODEUP_COOKIE}' \
-  # --header 'Content-Type: application/json' \
-  # --data-raw '$(echo "$data_raw")'" >&2
 
   response=$(curl -s --location --request POST "https://codeup.aliyun.com/api/v4/projects/${CODEUP_PROJECT_ID}/code_reviews?_csrf=${CODEUP_CSRF_TOKEN}&_input_charset=utf-8" \
     --header 'X-Requested-With: XMLHttpRequest' \
