@@ -22,14 +22,10 @@ while [ -z "$pr_id" ]; do
     read -p 'PR id(require): ' pr_id
 done
 
-# 首先尝试 squash 合并
-if ! gh pr merge $pr_id --squash --delete-branch; then
-    echo -e "${y}Squash merge failed, trying normal merge...${n}"
-    # 如果 squash 合并失败，尝试普通合并
-    if ! gh pr merge $pr_id --merge --delete-branch; then
-        echo -e "${r}Both squash and normal merge failed${n}"
-        exit 1
-    fi
+# 直接使用普通合并
+if ! gh pr merge $pr_id --merge --delete-branch; then
+    echo -e "${r}Normal merge failed${n}"
+    exit 1
 fi
 
 jira_merge $pr_id
