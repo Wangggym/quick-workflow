@@ -32,8 +32,8 @@ jira_create() {
 jira_merge() {
     local pr_id=$1
 
-    # read history
-    jira_ticket=$(read_history $pr_id)
+    # initialize empty jira_ticket
+    jira_ticket=""
 
     if [ -z "${jira_ticket}" ]; then
         # If no Jira ticket found in history, try to extract it from PR title
