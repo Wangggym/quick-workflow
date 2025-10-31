@@ -70,7 +70,7 @@ pr_body=$(getPRbody result "${github_short_description}" $jira_ticket)
 branch_name=${jira_ticket}--$(echo "$issue_desc" | sed 's/[^a-zA-Z0-9]/-/g')
 
 if [ -z "${jira_ticket}" ]; then
-    commit_title=$issue_desc
+    commit_title="# ${issue_desc}"
     branch_name=$(echo "$issue_desc" | sed 's/[^a-zA-Z0-9]/-/g')
 fi
 
