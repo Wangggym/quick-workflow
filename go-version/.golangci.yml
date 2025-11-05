@@ -1,0 +1,28 @@
+linters:
+  enable:
+    - gofmt
+    - golint
+    - govet
+    - errcheck
+    - staticcheck
+    - gosimple
+    - ineffassign
+    - unused
+    - misspell
+    - typecheck
+
+linters-settings:
+  golint:
+    min-confidence: 0.8
+  gofmt:
+    simplify: true
+
+run:
+  timeout: 5m
+  skip-dirs:
+    - vendor
+    - bin
+
+issues:
+  exclude-use-default: false
+
