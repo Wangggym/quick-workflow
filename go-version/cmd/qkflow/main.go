@@ -15,8 +15,12 @@ var (
 )
 
 func main() {
+	// Set version info in commands package
 	commands.Version = Version
 	commands.BuildTime = BuildTime
+	
+	// Update root command version for --version flag
+	commands.SetVersion(fmt.Sprintf("%s (built: %s)", Version, BuildTime))
 
 	if err := commands.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)

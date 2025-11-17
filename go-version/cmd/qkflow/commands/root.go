@@ -18,8 +18,9 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "qkflow",
-	Short: "Quick workflow tool for GitHub and Jira",
+	Use:     "qkflow",
+	Short:   "Quick workflow tool for GitHub and Jira",
+	Version: Version,
 	Long: `qkflow is a CLI tool to streamline your GitHub and Jira workflow.
 It automates common tasks like creating PRs, updating Jira status, and more.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
@@ -55,6 +56,11 @@ It automates common tasks like creating PRs, updating Jira status, and more.`,
 // Execute executes the root command
 func Execute() error {
 	return rootCmd.Execute()
+}
+
+// SetVersion sets the version string for the root command
+func SetVersion(version string) {
+	rootCmd.Version = version
 }
 
 func init() {
