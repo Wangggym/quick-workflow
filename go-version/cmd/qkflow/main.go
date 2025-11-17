@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Wangggym/quick-workflow/cmd/qk/commands"
+	"github.com/Wangggym/quick-workflow/cmd/qkflow/commands"
 )
 
 var (

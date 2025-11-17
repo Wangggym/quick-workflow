@@ -2,9 +2,9 @@ package config
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 
+	"github.com/Wangggym/quick-workflow/internal/utils"
 	"github.com/spf13/viper"
 )
 
@@ -29,26 +29,31 @@ func Load() (*Config, error) {
 		return globalConfig, nil
 	}
 
-	// 设置配置文件路径
-	home, err := os.UserHomeDir()
+	// 设置配置文件路径 (优先使用 iCloud Drive on macOS)
+	configDir, err := utils.GetQuickWorkflowConfigDir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get home directory: %w", err)
+		return nil, fmt.Errorf("failed to get config directory: %w", err)
 	}
 
-	configDir := filepath.Join(home, ".config", "quick-workflow")
 	configFile := filepath.Join(configDir, "config.yaml")
-
-	// 创建配置目录（如果不存在）
-	if err := os.MkdirAll(configDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create config directory: %w", err)
-	}
 
 	viper.SetConfigFile(configFile)
 	viper.SetConfigType("yaml")
 
-	// 环境变量前缀
+	// 环境变量前缀和绑定
 	viper.SetEnvPrefix("QK")
 	viper.AutomaticEnv()
+	
+	// 绑定环境变量（支持常用的环境变量名）
+	viper.BindEnv("github_token", "GITHUB_TOKEN", "GH_TOKEN")
+	viper.BindEnv("jira_api_token", "JIRA_API_TOKEN")
+	viper.BindEnv("jira_service_address", "JIRA_SERVICE_ADDRESS")
+	viper.BindEnv("branch_prefix", "GH_BRANCH_PREFIX")
+	viper.BindEnv("openai_key", "OPENAI_KEY")
+	viper.BindEnv("deepseek_key", "DEEPSEEK_KEY")
+	viper.BindEnv("openai_proxy_url", "OPENAI_PROXY_URL")
+	viper.BindEnv("openai_proxy_key", "OPENAI_PROXY_KEY")
+	viper.BindEnv("email", "EMAIL")
 
 	// 尝试读取配置文件
 	if err := viper.ReadInConfig(); err != nil {
@@ -82,18 +87,13 @@ func Get() *Config {
 
 // Save saves the current configuration to file
 func Save(cfg *Config) error {
-	home, err := os.UserHomeDir()
+	// 获取配置目录 (优先使用 iCloud Drive on macOS)
+	configDir, err := utils.GetQuickWorkflowConfigDir()
 	if err != nil {
-		return fmt.Errorf("failed to get home directory: %w", err)
+		return fmt.Errorf("failed to get config directory: %w", err)
 	}
 
-	configDir := filepath.Join(home, ".config", "quick-workflow")
 	configFile := filepath.Join(configDir, "config.yaml")
-
-	// 创建配置目录
-	if err := os.MkdirAll(configDir, 0755); err != nil {
-		return fmt.Errorf("failed to create config directory: %w", err)
-	}
 
 	// 设置值
 	viper.Set("email", cfg.Email)

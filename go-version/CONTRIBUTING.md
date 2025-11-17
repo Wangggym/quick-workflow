@@ -191,7 +191,7 @@ Before submitting a PR, ensure:
 
 ```
 go-version/
-├── cmd/qk/              # Main application entry point
+├── cmd/qkflow/              # Main application entry point
 │   ├── main.go
 │   └── commands/        # CLI commands
 ├── internal/            # Internal packages

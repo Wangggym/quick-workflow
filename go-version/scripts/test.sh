@@ -87,9 +87,9 @@ fi
 # 6. Build test
 echo ""
 echo -n "Testing build... "
-if go build -o /tmp/qk-test ./cmd/qk; then
+if go build -o /tmp/qkflow-test ./cmd/qkflow; then
     echo -e "${GREEN}✓${NC}"
-    rm /tmp/qk-test
+    rm /tmp/qkflow-test
 else
     echo -e "${RED}✗${NC}"
     FAILED=$((FAILED + 1))

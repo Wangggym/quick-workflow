@@ -2,10 +2,10 @@ SHELL := /bin/bash
 
 HIDE ?= @
 
-.PHONY: gen fix check dev run test test-cov build build-all install clean help
+.PHONY: gen fix check dev run test test-cov test-fast build build-all install clean help
 
 # Variables
-BINARY_NAME := qkg
+BINARY_NAME := qkflow
 BUILD_DIR := bin
 GO := go
 GOFLAGS := -v
@@ -13,14 +13,15 @@ GOFLAGS := -v
 # Version info
 VERSION ?= $(shell git describe --tags --always --dirty)
 BUILD_TIME := $(shell date -u '+%Y-%m-%d_%H:%M:%S')
-LDFLAGS := -ldflags "-X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME}"
+LDFLAGS := -ldflags "-X github.com/Wangggym/quick-workflow/cmd/qkflow/commands.Version=${VERSION} -X github.com/Wangggym/quick-workflow/cmd/qkflow/commands.BuildTime=${BUILD_TIME}"
 
 # Initialize dependencies
 gen:
-	$(HIDE)echo "📚 Downloading dependencies..."
+	$(HIDE)echo "📚 Initializing project..."
 	$(HIDE)$(GO) mod download
 	$(HIDE)$(GO) mod tidy
-	@echo "✅ Dependencies initialized."
+	$(HIDE)$(GO) mod verify
+	@echo "✅ Dependencies initialized and verified."
 
 # Code formatting and fixes
 fix:
@@ -46,7 +47,7 @@ check:
 # Development mode (quick run with optional args)
 # Usage: make dev ARGS="pr create"
 dev:
-	$(HIDE)$(GO) run ./cmd/qk $(ARGS)
+	$(HIDE)$(GO) run ./cmd/qkflow $(ARGS)
 
 # Production build and run
 run: build
@@ -75,17 +76,17 @@ test-fast:
 build:
 	$(HIDE)echo "🔨 Building $(BINARY_NAME)..."
 	$(HIDE)mkdir -p $(BUILD_DIR)
-	$(HIDE)$(GO) build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/qk
+	$(HIDE)$(GO) build $(GOFLAGS) $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/qkflow
 	@echo "✅ Built: $(BUILD_DIR)/$(BINARY_NAME)"
 
 # Build for all platforms
 build-all:
 	$(HIDE)echo "🔨 Building for multiple platforms..."
 	$(HIDE)mkdir -p $(BUILD_DIR)
-	$(HIDE)GOOS=darwin GOARCH=amd64 $(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64 ./cmd/qk
-	$(HIDE)GOOS=darwin GOARCH=arm64 $(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-arm64 ./cmd/qk
-	$(HIDE)GOOS=linux GOARCH=amd64 $(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-linux-amd64 ./cmd/qk
-	$(HIDE)GOOS=windows GOARCH=amd64 $(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-windows-amd64.exe ./cmd/qk
+	$(HIDE)GOOS=darwin GOARCH=amd64 $(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64 ./cmd/qkflow
+	$(HIDE)GOOS=darwin GOARCH=arm64 $(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-arm64 ./cmd/qkflow
+	$(HIDE)GOOS=linux GOARCH=amd64 $(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-linux-amd64 ./cmd/qkflow
+	$(HIDE)GOOS=windows GOARCH=amd64 $(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-windows-amd64.exe ./cmd/qkflow
 	@echo "✅ Multi-platform builds completed."
 
 # Install to GOPATH/bin
@@ -93,6 +94,28 @@ install: build
 	$(HIDE)echo "📦 Installing $(BINARY_NAME)..."
 	$(HIDE)cp $(BUILD_DIR)/$(BINARY_NAME) $(shell go env GOPATH)/bin/$(BINARY_NAME)
 	@echo "✅ Installed to $(shell go env GOPATH)/bin/$(BINARY_NAME)"
+
+# Release helper
+release:
+	@if [ -z "$(VERSION)" ]; then \
+		echo "❌ Please set VERSION, e.g., make release VERSION=v1.0.0"; \
+		exit 1; \
+	fi
+	@echo "🚀 Creating release $(VERSION)..."
+	@echo "1️⃣  Running tests..."
+	@$(MAKE) test
+	@echo "2️⃣  Running linters (optional)..."
+	@$(MAKE) check || echo "⚠️  Linters not available, skipping..."
+	@echo "3️⃣  Building all platforms..."
+	@$(MAKE) build-all
+	@echo ""
+	@echo "✅ All checks passed! Ready to release:"
+	@echo ""
+	@echo "Run the following commands:"
+	@echo "  git tag -a $(VERSION) -m 'Release $(VERSION)'"
+	@echo "  git push origin $(VERSION)"
+	@echo ""
+	@echo "This will trigger GitHub Actions to build and publish the release."
 
 # Cleanup
 clean:
@@ -122,6 +145,10 @@ help:
 	@echo "  make build-all    - Build for all platforms"
 	@echo "  make install      - Install to GOPATH/bin"
 	@echo ""
+	@echo "Release:"
+	@echo "  make release      - Create release (requires VERSION env)"
+	@echo ""
 	@echo "Utilities:"
 	@echo "  make clean        - Clean build artifacts"
+	@echo "  make help         - Show this help message"
 

@@ -3,7 +3,12 @@
 > A modern, blazing-fast CLI tool for streamlined GitHub and Jira workflows
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://go.dev/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/Wangggym/quick-workflow?style=flat&logo=github)](https://github.com/Wangggym/quick-workflow/releases)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Wangggym/quick-workflow/build.yml?branch=main&style=flat&logo=github-actions)](https://github.com/Wangggym/quick-workflow/actions)
+[![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey?style=flat)](https://github.com/Wangggym/quick-workflow)
+[![iCloud Sync](https://img.shields.io/badge/iCloud-Sync%20Enabled-blue?style=flat&logo=icloud)](ICLOUD_MIGRATION.md)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](CONTRIBUTING.md)
 
 ## 🚀 What's New in Go Version
 
@@ -15,14 +20,17 @@ This is a complete rewrite of the original Shell-based quick-workflow tool in Go
 - **🎨 Better UX** - Interactive prompts, colored output
 - **🧪 Testable** - Comprehensive test coverage
 - **🌍 Cross-platform** - Works on macOS, Linux, and Windows
+- **☁️ iCloud Sync** - Automatic config sync across Mac devices (macOS only)
 
 ## ✨ Features
 
 - **PR Creation** - Create PRs with automatic branch creation, commit, and push
-- **Jira Integration** - Automatically update Jira status and add PR links
 - **PR Merging** - Merge PRs and clean up branches automatically
+- **Quick Update** - Commit and push with PR title as commit message
+- **Jira Integration** - Automatically update Jira status and add PR links
 - **Interactive CLI** - Beautiful prompts and progress indicators
-- **Configuration Management** - Simple setup with `qk init`
+- **Configuration Management** - Simple setup with `qkflow init`
+- **iCloud Sync** - Seamlessly sync configs across all your Mac devices ☁️
 
 ## 📦 Installation
 
@@ -30,25 +38,25 @@ This is a complete rewrite of the original Shell-based quick-workflow tool in Go
 
 ```bash
 # macOS (Apple Silicon)
-curl -L https://github.com/Wangggym/quick-workflow/releases/latest/download/qk-darwin-arm64 -o qk
-chmod +x qk
-sudo mv qk /usr/local/bin/
+curl -L https://github.com/Wangggym/quick-workflow/releases/latest/download/qkflow-darwin-arm64 -o qkflow
+chmod +x qkflow
+sudo mv qkflow /usr/local/bin/
 
 # macOS (Intel)
-curl -L https://github.com/Wangggym/quick-workflow/releases/latest/download/qk-darwin-amd64 -o qk
-chmod +x qk
-sudo mv qk /usr/local/bin/
+curl -L https://github.com/Wangggym/quick-workflow/releases/latest/download/qkflow-darwin-amd64 -o qkflow
+chmod +x qkflow
+sudo mv qkflow /usr/local/bin/
 
 # Linux
-curl -L https://github.com/Wangggym/quick-workflow/releases/latest/download/qk-linux-amd64 -o qk
-chmod +x qk
-sudo mv qk /usr/local/bin/
+curl -L https://github.com/Wangggym/quick-workflow/releases/latest/download/qkflow-linux-amd64 -o qkflow
+chmod +x qkflow
+sudo mv qkflow /usr/local/bin/
 ```
 
 ### Option 2: Install with Go
 
 ```bash
-go install github.com/Wangggym/quick-workflow/cmd/qk@latest
+go install github.com/Wangggym/quick-workflow/cmd/qkflow@latest
 ```
 
 ### Option 3: Build from Source
@@ -57,7 +65,7 @@ go install github.com/Wangggym/quick-workflow/cmd/qk@latest
 git clone https://github.com/Wangggym/quick-workflow.git
 cd quick-workflow/go-version
 make build
-sudo cp bin/qk /usr/local/bin/
+sudo cp bin/qkflow /usr/local/bin/
 ```
 
 ## ⚙️ Setup
@@ -73,7 +81,7 @@ sudo cp bin/qk /usr/local/bin/
 Run the interactive setup:
 
 ```bash
-qk init
+qkflow init
 ```
 
 This will prompt you for:
@@ -84,7 +92,22 @@ This will prompt you for:
 - Optional: Branch prefix
 - Optional: OpenAI API key for AI features
 
-Configuration is saved to `~/.config/quick-workflow/config.yaml`
+**Configuration Storage:**
+
+✨ **NEW**: On macOS, all configs are automatically saved to iCloud Drive in a single directory and synced across all your devices!
+
+- **macOS with iCloud Drive**: Synced across devices ☁️
+  - 📂 All configs in: `~/Library/Mobile Documents/com~apple~CloudDocs/.qkflow/`
+- **Local Storage** (fallback): 
+  - 📂 All configs in: `~/.qkflow/`
+
+Both locations contain:
+- `config.yaml` - Main configuration
+- `jira-status.json` - Jira status mappings
+
+Run `qkflow config` to see your actual storage location.
+
+📖 See [iCloud Migration Guide](ICLOUD_MIGRATION.md) for more details.
 
 ## 🎯 Usage
 
@@ -92,13 +115,13 @@ Configuration is saved to `~/.config/quick-workflow/config.yaml`
 
 ```bash
 # With Jira ticket
-qk pr create PROJ-123
+qkflow pr create PROJ-123
 
 # Without Jira ticket (will prompt)
-qk pr create
+qkflow pr create
 
 # Interactive mode (no arguments)
-qk pr create
+qkflow pr create
 ```
 
 **What it does:**
@@ -117,10 +140,10 @@ qk pr create
 
 ```bash
 # Merge PR by number
-qk pr merge 123
+qkflow pr merge 123
 
 # Interactive mode
-qk pr merge
+qkflow pr merge
 ```
 
 **What it does:**
@@ -133,18 +156,34 @@ qk pr merge
 7. ✅ Updates Jira status (optional)
 8. ✅ Adds merge comment to Jira
 
+### Quick Update (qkupdate)
+
+```bash
+# Quick commit and push with PR title as commit message
+qkflow update
+```
+
+**What it does:**
+1. ✅ Gets the current PR title from GitHub
+2. ✅ Stages all changes (git add --all)
+3. ✅ Commits with PR title as commit message
+4. ✅ Pushes to origin
+5. ✅ Falls back to "update" if no PR found
+
+This is perfect for quick updates to an existing PR!
+
 ### Other Commands
 
 ```bash
 # Show current configuration
-qk config
+qkflow config
 
 # Show version
-qk version
+qkflow version
 
 # Get help
-qk help
-qk pr --help
+qkflow help
+qkflow pr --help
 ```
 
 ## 🏗️ Project Structure
@@ -152,21 +191,26 @@ qk pr --help
 ```
 go-version/
 ├── cmd/
-│   └── qk/
+│   └── qkflow/
 │       ├── main.go              # Entry point
 │       └── commands/
 │           ├── root.go          # Root command
 │           ├── init.go          # Setup wizard
 │           ├── pr.go            # PR commands
 │           ├── pr_create.go     # Create PR
-│           └── pr_merge.go      # Merge PR
+│           ├── pr_merge.go      # Merge PR
+│           ├── update.go        # Quick update
+│           └── jira.go          # Jira commands
 ├── internal/
 │   ├── github/
 │   │   └── client.go           # GitHub API client
 │   ├── jira/
-│   │   └── client.go           # Jira API client
+│   │   ├── client.go           # Jira API client
+│   │   └── status_cache.go     # Status cache
 │   ├── git/
 │   │   └── operations.go       # Git operations
+│   ├── ai/
+│   │   └── client.go           # AI client
 │   └── ui/
 │       └── prompt.go           # User interface
 ├── pkg/
@@ -211,7 +255,7 @@ make fmt
 
 ```bash
 # Run without building
-go run ./cmd/qk pr create
+go run ./cmd/qkflow pr create
 
 # Or use Makefile
 make run-pr-create
@@ -232,9 +276,26 @@ go test ./internal/github/...
 go test ./internal/jira/...
 ```
 
-## 📝 Configuration File
+## 📝 Configuration Files
 
-The configuration is stored at `~/.config/quick-workflow/config.yaml`:
+### Storage Location
+
+qkflow intelligently stores configurations based on your system:
+
+**macOS with iCloud Drive** (Recommended):
+- Configs are stored in iCloud Drive and automatically synced across your Mac devices
+- All configs in: `~/Library/Mobile Documents/com~apple~CloudDocs/.qkflow/`
+  - `config.yaml` - Main configuration
+  - `jira-status.json` - Jira status mappings
+
+**Local Storage** (Fallback):
+- All configs in: `~/.qkflow/`
+  - `config.yaml` - Main configuration
+  - `jira-status.json` - Jira status mappings
+
+Run `qkflow config` to see your actual storage location.
+
+### Configuration Format
 
 ```yaml
 email: your.email@example.com
@@ -247,14 +308,17 @@ openai_key: sk-your_openai_key  # optional
 
 ## 🔒 Security
 
-- Tokens are stored locally in `~/.config/quick-workflow/config.yaml`
+- Tokens are stored securely in your config directory (local or iCloud)
 - File permissions are set to `0600` (user read/write only)
+- iCloud storage is encrypted and secure
 - Never commit the config file or share it
 - Use environment variables for CI/CD:
   ```bash
   export QK_GITHUB_TOKEN=xxx
   export QK_JIRA_API_TOKEN=xxx
   ```
+
+**Note**: If using iCloud Drive, your configurations will sync across your Mac devices automatically, providing a seamless experience.
 
 ## 🚧 Migration from Shell Version
 
