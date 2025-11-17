@@ -38,21 +38,39 @@ This is a complete rewrite of the original Shell-based quick-workflow tool in Go
 
 ### Option 1: Download Binary (Recommended)
 
+#### macOS Installation
+
 ```bash
-# macOS (Apple Silicon)
+# macOS (Apple Silicon - M1/M2/M3)
 curl -L https://github.com/Wangggym/quick-workflow/releases/latest/download/qkflow-darwin-arm64 -o qkflow
-chmod +x qkflow
-sudo mv qkflow /usr/local/bin/
 
 # macOS (Intel)
 curl -L https://github.com/Wangggym/quick-workflow/releases/latest/download/qkflow-darwin-amd64 -o qkflow
+
+# 🔑 Important: Remove macOS quarantine attribute to bypass Gatekeeper (if needed)
+# Note: If you get "No such xattr: com.apple.quarantine", that's fine - skip this step
+xattr -d com.apple.quarantine qkflow 2>/dev/null || echo "No quarantine attribute found (this is fine)"
+
+# Make executable and install
 chmod +x qkflow
 sudo mv qkflow /usr/local/bin/
 
-# Linux
+# Verify installation
+qkflow version
+```
+
+> **⚠️ macOS Security Notice**: If you see "qkflow-darwin-arm64 cannot be opened because Apple cannot verify that it is free of malware", this is normal for unsigned binaries. The `xattr -d com.apple.quarantine` command above will resolve this issue safely.
+
+#### Linux Installation
+
+```bash
+# Linux (x86_64)
 curl -L https://github.com/Wangggym/quick-workflow/releases/latest/download/qkflow-linux-amd64 -o qkflow
 chmod +x qkflow
 sudo mv qkflow /usr/local/bin/
+
+# Verify installation
+qkflow version
 ```
 
 ### Option 2: Install with Go
@@ -383,6 +401,82 @@ See [MIGRATION.md](MIGRATION.md) for detailed migration guide.
 | Speed | ~1-2s startup | <100ms startup |
 | Platform | macOS/Linux | macOS/Linux/Windows |
 | Updates | `git pull` | Download new binary |
+
+## 🔧 Troubleshooting
+
+### macOS Installation Issues
+
+#### "qkflow-darwin-arm64 cannot be opened" Error
+
+If you encounter this error:
+```
+"qkflow-darwin-arm64" cannot be opened because Apple cannot verify that it is free of malware that may harm your Mac or compromise your privacy.
+```
+
+**Solution 1: Remove Quarantine Attribute (Recommended)**
+```bash
+# Remove quarantine attribute (if it exists)
+xattr -d com.apple.quarantine qkflow-darwin-arm64 2>/dev/null || echo "No quarantine attribute (this is fine)"
+chmod +x qkflow-darwin-arm64
+```
+
+> **Note**: If you see "No such xattr: com.apple.quarantine", that means the file wasn't quarantined and you can skip the xattr step.
+
+**Solution 2: System Settings**
+1. Try to run the binary (it will show the security warning)
+2. Go to **System Settings** → **Privacy & Security**
+3. Scroll down to find the blocked app
+4. Click **Open Anyway**
+
+**Solution 3: Temporary Gatekeeper Disable**
+```bash
+# Disable Gatekeeper temporarily (requires admin)
+sudo spctl --master-disable
+
+# Run your binary, then re-enable
+sudo spctl --master-enable
+```
+
+#### "Permission Denied" Error
+
+```bash
+# Make sure the file is executable
+chmod +x qkflow
+
+# Check if /usr/local/bin is in your PATH
+echo $PATH | grep -q "/usr/local/bin" && echo "✅ PATH is correct" || echo "❌ Add /usr/local/bin to PATH"
+
+# Add to PATH if needed (add to ~/.zshrc or ~/.bash_profile)
+export PATH="/usr/local/bin:$PATH"
+```
+
+### General Issues
+
+#### Command Not Found
+
+```bash
+# Check if qkflow is installed
+which qkflow
+
+# If not found, ensure it's in your PATH
+ls -la /usr/local/bin/qkflow
+
+# Reload shell configuration
+source ~/.zshrc  # or ~/.bash_profile
+```
+
+#### Update Issues
+
+```bash
+# Check current version
+qkflow version
+
+# Manual update (download latest binary and replace)
+curl -L https://github.com/Wangggym/quick-workflow/releases/latest/download/qkflow-darwin-arm64 -o /tmp/qkflow-new
+xattr -d com.apple.quarantine /tmp/qkflow-new
+chmod +x /tmp/qkflow-new
+sudo mv /tmp/qkflow-new /usr/local/bin/qkflow
+```
 
 ## 🤝 Contributing
 
