@@ -39,7 +39,7 @@
 ### Code Structure
 ```
 go-version/
-├── cmd/qk/                      # ✅ Main application
+├── cmd/qkflow/                      # ✅ Main application
 │   ├── main.go
 │   └── commands/
 │       ├── root.go              # ✅ Root command
@@ -153,7 +153,7 @@ qk init
 
 ### Package Structure
 
-#### `cmd/qk/commands`
+#### `cmd/qkflow/commands`
 - CLI command definitions
 - User interaction logic
 - Command orchestration

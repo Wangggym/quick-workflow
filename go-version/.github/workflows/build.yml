@@ -9,52 +9,69 @@ on:
 
 jobs:
   build:
-    name: Build
+    name: Build and Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for git describe
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.21'
+          cache: true
 
       - name: Cache Go modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-${{ hashFiles('go-version/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
 
       - name: Download dependencies
         working-directory: ./go-version
-        run: go mod download
+        run: make gen
 
       - name: Run tests
         working-directory: ./go-version
-        run: go test -v -race -coverprofile=coverage.out ./...
+        run: make test
 
       - name: Run linters
         working-directory: ./go-version
+        run: make check || true
+
+      - name: Get version
+        id: version
         run: |
-          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-          golangci-lint run ./...
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=$(git describe --tags --always --dirty)
+          fi
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "BUILD_TIME=$(date -u '+%Y-%m-%d_%H:%M:%S')" >> $GITHUB_OUTPUT
 
       - name: Build binaries
         working-directory: ./go-version
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
+          BUILD_TIME: ${{ steps.version.outputs.BUILD_TIME }}
         run: |
           mkdir -p bin
-          GOOS=darwin GOARCH=amd64 go build -o bin/qk-darwin-amd64 ./cmd/qk
-          GOOS=darwin GOARCH=arm64 go build -o bin/qk-darwin-arm64 ./cmd/qk
-          GOOS=linux GOARCH=amd64 go build -o bin/qk-linux-amd64 ./cmd/qk
-          GOOS=windows GOARCH=amd64 go build -o bin/qk-windows-amd64.exe ./cmd/qk
+          LDFLAGS="-X github.com/Wangggym/quick-workflow/cmd/qkflow/commands.Version=${VERSION} -X github.com/Wangggym/quick-workflow/cmd/qkflow/commands.BuildTime=${BUILD_TIME}"
+          
+          GOOS=darwin GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o bin/qkflow-darwin-amd64 ./cmd/qkflow
+          GOOS=darwin GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o bin/qkflow-darwin-arm64 ./cmd/qkflow
+          GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o bin/qkflow-linux-amd64 ./cmd/qkflow
+          GOOS=windows GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o bin/qkflow-windows-amd64.exe ./cmd/qkflow
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: binaries
           path: go-version/bin/*
@@ -64,22 +81,25 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: binaries
           path: bin
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: bin/*
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'rc') || contains(github.ref, 'alpha') }}
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

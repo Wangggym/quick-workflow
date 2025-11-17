@@ -56,10 +56,10 @@ echo ""
 
 # GitHub repository
 REPO="Wangggym/quick-workflow"
-BINARY_NAME="qk"
+BINARY_NAME="qkflow"
 
 if [ "$PLATFORM" = "windows" ]; then
-    BINARY_NAME="qk.exe"
+    BINARY_NAME="qkflow.exe"
 fi
 
 # Get latest release
@@ -124,16 +124,16 @@ echo -e "${GREEN}✅ Installation successful!${NC}"
 echo ""
 
 # Verify installation
-if command -v qk &> /dev/null; then
+if command -v qkflow &> /dev/null; then
     echo "Installed version:"
-    qk version
+    qkflow version
     echo ""
     echo -e "${GREEN}Next steps:${NC}"
-    echo "  1. Run: ${YELLOW}qk init${NC}"
+    echo "  1. Run: ${YELLOW}qkflow init${NC}"
     echo "  2. Configure your credentials"
-    echo "  3. Start using: ${YELLOW}qk pr create${NC}"
+    echo "  3. Start using: ${YELLOW}qkflow pr create${NC}"
 else
-    echo -e "${YELLOW}⚠️  qk command not found in PATH${NC}"
+    echo -e "${YELLOW}⚠️  qkflow command not found in PATH${NC}"
     echo ""
     echo "Add this to your ~/.zshrc or ~/.bashrc:"
     echo "  export PATH=\"$INSTALL_DIR:\$PATH\""

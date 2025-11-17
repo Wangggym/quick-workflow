@@ -138,6 +138,28 @@ func (c *Client) AddPRLink(issueKey, prURL string) error {
 	return c.AddComment(issueKey, comment)
 }
 
+// AssignToMe assigns a Jira issue to the current user
+func (c *Client) AssignToMe(issueKey string) error {
+	cfg := config.Get()
+	if cfg == nil || cfg.Email == "" {
+		return fmt.Errorf("email not configured")
+	}
+
+	// Get current user's account ID
+	myself, _, err := c.client.User.GetSelf()
+	if err != nil {
+		return fmt.Errorf("failed to get current user: %w", err)
+	}
+
+	// Assign issue to current user
+	_, err = c.client.Issue.UpdateAssignee(issueKey, myself)
+	if err != nil {
+		return fmt.Errorf("failed to assign issue %s: %w", issueKey, err)
+	}
+
+	return nil
+}
+
 // ExtractProjectKey extracts the project key from an issue key
 // For example: "PROJ-123" -> "PROJ"
 func ExtractProjectKey(issueKey string) string {

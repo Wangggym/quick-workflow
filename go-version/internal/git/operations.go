@@ -82,9 +82,10 @@ func Push(branchName string) error {
 	return nil
 }
 
-// DeleteBranch deletes a local branch
+// DeleteBranch deletes a local branch (force delete)
 func DeleteBranch(branchName string) error {
-	cmd := exec.Command("git", "branch", "-d", branchName)
+	// 使用 -D 强制删除，因为在 PR 合并后本地分支可能显示未合并
+	cmd := exec.Command("git", "branch", "-D", branchName)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 

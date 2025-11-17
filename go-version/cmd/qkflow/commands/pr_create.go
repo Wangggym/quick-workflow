@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/Wangggym/quick-workflow/internal/ai"
 	"github.com/Wangggym/quick-workflow/internal/git"
 	"github.com/Wangggym/quick-workflow/internal/github"
 	"github.com/Wangggym/quick-workflow/internal/jira"
@@ -79,47 +80,9 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	// 获取 PR 标题
-	var title string
+	// 显示 Jira 信息
 	if jiraIssue != nil {
-		title = jiraIssue.Summary
-		ui.Info(fmt.Sprintf("Using Jira summary as title: %s", title))
-		confirm, err := ui.PromptConfirm("Use this title?", true)
-		if err != nil {
-			if err.Error() == "interrupt" {
-				ui.Warning("Operation cancelled by user")
-				os.Exit(0)
-			}
-			ui.Error(fmt.Sprintf("Failed to get confirmation: %v", err))
-			return
-		}
-		if !confirm {
-			title, err = ui.PromptInput("Enter PR title:", true)
-			if err != nil {
-				if err.Error() == "interrupt" {
-					ui.Warning("Operation cancelled by user")
-					os.Exit(0)
-				}
-				ui.Error(fmt.Sprintf("Failed to get title: %v", err))
-				return
-			}
-		}
-	} else {
-		title, err = ui.PromptInput("Enter PR title:", true)
-		if err != nil {
-			if err.Error() == "interrupt" {
-				ui.Warning("Operation cancelled by user")
-				os.Exit(0)
-			}
-			ui.Error(fmt.Sprintf("Failed to get title: %v", err))
-			return
-		}
-	}
-
-	// 获取描述
-	description, err := ui.PromptInput("Enter PR description (optional):", false)
-	if err != nil {
-		description = ""
+		ui.Info(fmt.Sprintf("Jira issue: %s", jiraIssue.Summary))
 	}
 
 	// 选择变更类型
@@ -134,8 +97,47 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 		selectedTypes = []string{}
 	}
 
+	// 生成 PR 标题
+	var title string
+	if jiraIssue != nil {
+		// 提取主要类型（第一个选择的类型）
+		prType := ""
+		if len(selectedTypes) > 0 {
+			prType = ui.ExtractPRType(selectedTypes[0])
+		}
+		
+		// 使用 AI 生成简洁的 PR 标题
+		aiClient, err := ai.NewClient()
+		if err == nil && prType != "" {
+			ui.Info("Generating PR title with AI...")
+			title, err = aiClient.GeneratePRTitle(jiraIssue.Summary, prType, "")
+			if err != nil {
+				ui.Warning(fmt.Sprintf("AI generation failed: %v", err))
+				// 回退到简单格式
+				title = generateSimpleTitle(jiraIssue.Summary, prType, "")
+			} else {
+				ui.Success(fmt.Sprintf("Generated title: %s", title))
+			}
+		} else {
+			// 没有 AI 或没有类型，使用简单生成
+			title = generateSimpleTitle(jiraIssue.Summary, prType, "")
+			ui.Success(fmt.Sprintf("Generated title: %s", title))
+		}
+	} else {
+		// 没有 Jira，手动输入
+		title, err = ui.PromptInput("Enter PR title:", true)
+		if err != nil {
+			if err.Error() == "interrupt" {
+				ui.Warning("Operation cancelled by user")
+				os.Exit(0)
+			}
+			ui.Error(fmt.Sprintf("Failed to get title: %v", err))
+			return
+		}
+	}
+
 	// 构建 PR body
-	prBody := buildPRBody(description, selectedTypes, jiraTicket)
+	prBody := buildPRBody(selectedTypes, jiraTicket)
 
 	// 创建分支名
 	branchName := buildBranchName(jiraTicket, title)
@@ -231,6 +233,14 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 		if err != nil {
 			ui.Warning(fmt.Sprintf("Failed to create Jira client: %v", err))
 		} else {
+			// 分配给当前用户
+			ui.Info("Assigning Jira ticket to you...")
+			if err := jiraClient.AssignToMe(jiraTicket); err != nil {
+				ui.Warning(fmt.Sprintf("Failed to assign ticket: %v", err))
+			} else {
+				ui.Success("Assigned Jira ticket to you")
+			}
+
 			// 添加 PR 链接
 			ui.Info("Adding PR link to Jira...")
 			if err := jiraClient.AddPRLink(jiraTicket, pr.HTMLURL); err != nil {
@@ -240,20 +250,39 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 			}
 
 			// 更新状态
-			updateStatus, err := ui.PromptConfirm("Do you want to update Jira status?", true)
-			if err == nil && updateStatus {
 				projectKey := jira.ExtractProjectKey(jiraTicket)
-				statuses, err := jiraClient.GetProjectStatuses(projectKey)
+			
+			// 检查状态缓存
+			statusCache, err := jira.NewStatusCache()
+			if err != nil {
+				ui.Warning(fmt.Sprintf("Failed to create status cache: %v", err))
+			} else {
+				mapping, err := statusCache.GetProjectStatus(projectKey)
 				if err != nil {
-					ui.Warning(fmt.Sprintf("Failed to get statuses: %v", err))
-				} else {
-					newStatus, err := ui.PromptSelect("Select new status:", statuses)
-					if err == nil {
-						if err := jiraClient.UpdateStatus(jiraTicket, newStatus); err != nil {
-							ui.Warning(fmt.Sprintf("Failed to update status: %v", err))
+					ui.Warning(fmt.Sprintf("Failed to get cached status: %v", err))
+				} else if mapping == nil {
+					// 第一次使用，配置状态映射
+					ui.Info(fmt.Sprintf("First time using project %s, please configure status mappings", projectKey))
+					mapping, err = setupProjectStatusMapping(jiraClient, projectKey)
+					if err != nil {
+						ui.Warning(fmt.Sprintf("Failed to setup status mapping: %v", err))
+					} else if mapping != nil {
+						// 保存配置
+						if err := statusCache.SaveProjectStatus(mapping); err != nil {
+							ui.Warning(fmt.Sprintf("Failed to save status mapping: %v", err))
 						} else {
-							ui.Success(fmt.Sprintf("Updated Jira status to: %s", newStatus))
+							ui.Success("Status mapping saved!")
 						}
+					}
+				}
+				
+				// 使用缓存的状态更新
+				if mapping != nil && mapping.PRCreatedStatus != "" {
+					ui.Info(fmt.Sprintf("Updating Jira status to: %s", mapping.PRCreatedStatus))
+					if err := jiraClient.UpdateStatus(jiraTicket, mapping.PRCreatedStatus); err != nil {
+						ui.Warning(fmt.Sprintf("Failed to update status: %v", err))
+					} else {
+						ui.Success(fmt.Sprintf("Updated Jira status to: %s", mapping.PRCreatedStatus))
 					}
 				}
 			}
@@ -278,13 +307,10 @@ func buildBranchName(jiraTicket, title string) string {
 	return sanitized
 }
 
-func buildPRBody(description string, types []string, jiraTicket string) string {
+func buildPRBody(types []string, jiraTicket string) string {
 	var body strings.Builder
 
-	if description != "" {
-		body.WriteString(description)
-		body.WriteString("\n\n")
-	}
+	body.WriteString("# PR Ready\n\n")
 
 	if len(types) > 0 {
 		body.WriteString("## Types of changes\n\n")
@@ -295,10 +321,64 @@ func buildPRBody(description string, types []string, jiraTicket string) string {
 	}
 
 	if jiraTicket != "" {
-		body.WriteString(fmt.Sprintf("## Related Issues\n\n- %s\n", jiraTicket))
+		cfg := config.Get()
+		jiraURL := fmt.Sprintf("%s/browse/%s", cfg.JiraServiceAddress, jiraTicket)
+		body.WriteString(fmt.Sprintf("#### Jira Link:\n\n%s\n", jiraURL))
 	}
 
 	return body.String()
+}
+
+func setupProjectStatusMapping(client *jira.Client, projectKey string) (*jira.StatusMapping, error) {
+	statuses, err := client.GetProjectStatuses(projectKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get project statuses: %w", err)
+	}
+
+	ui.Info("Select status when PR is created/in progress:")
+	createdStatus, err := ui.PromptSelect("Status for PR created:", statuses)
+	if err != nil {
+		if err.Error() == "interrupt" {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to select created status: %w", err)
+	}
+
+	ui.Info("Select status when PR is merged/done:")
+	mergedStatus, err := ui.PromptSelect("Status for PR merged:", statuses)
+	if err != nil {
+		if err.Error() == "interrupt" {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to select merged status: %w", err)
+	}
+
+	return &jira.StatusMapping{
+		ProjectKey:      projectKey,
+		PRCreatedStatus: createdStatus,
+		PRMergedStatus:  mergedStatus,
+	}, nil
+}
+
+func generateSimpleTitle(jiraSummary, prType, description string) string {
+	// 如果有简短描述，使用描述
+	if description != "" {
+		if prType != "" {
+			return fmt.Sprintf("%s: %s", prType, description)
+		}
+		return description
+	}
+	
+	// 否则使用 Jira 标题的前 50 个字符
+	summary := jiraSummary
+	if len(summary) > 50 {
+		summary = summary[:50] + "..."
+	}
+	
+	if prType != "" {
+		return fmt.Sprintf("%s: %s", prType, summary)
+	}
+	return summary
 }
 
 func copyToClipboard(text string) {

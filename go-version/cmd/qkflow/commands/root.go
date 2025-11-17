@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Wangggym/quick-workflow/internal/ui"
+	"github.com/Wangggym/quick-workflow/internal/utils"
 	"github.com/Wangggym/quick-workflow/pkg/config"
 	"github.com/spf13/cobra"
 )
@@ -16,9 +17,9 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "qk",
+	Use:   "qkflow",
 	Short: "Quick workflow tool for GitHub and Jira",
-	Long: `qk is a CLI tool to streamline your GitHub and Jira workflow.
+	Long: `qkflow is a CLI tool to streamline your GitHub and Jira workflow.
 It automates common tasks like creating PRs, updating Jira status, and more.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		// 对于某些命令不需要检查配置
@@ -32,12 +33,12 @@ It automates common tasks like creating PRs, updating Jira status, and more.`,
 		// 检查配置
 		if _, err := config.Load(); err != nil {
 			ui.Error(fmt.Sprintf("Failed to load config: %v", err))
-			ui.Warning("Please run 'qk init' to configure the tool")
+			ui.Warning("Please run 'qkflow init' to configure the tool")
 			return
 		}
 
 		if !config.IsConfigured() {
-			ui.Warning("Configuration incomplete. Please run 'qk init' to complete setup")
+			ui.Warning("Configuration incomplete. Please run 'qkflow init' to complete setup")
 		}
 	},
 }
@@ -52,13 +53,15 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(prCmd)
 	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(jiraCmd)
+	rootCmd.AddCommand(updateCmd)
 }
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("qk version %s (built: %s)\n", Version, BuildTime)
+		fmt.Printf("qkflow version %s (built: %s)\n", Version, BuildTime)
 	},
 }
 
@@ -68,17 +71,56 @@ var configCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.Get()
 		if cfg == nil {
-			ui.Error("No configuration found. Run 'qk init' first.")
+			ui.Error("No configuration found. Run 'qkflow init' first.")
 			return
 		}
 
 		fmt.Println("Current configuration:")
+		fmt.Println()
+		
+		// Show storage location
+		location := utils.GetConfigLocation()
+		configDir, _ := utils.GetQuickWorkflowConfigDir()
+		jiraDir, _ := utils.GetConfigDir()
+		fmt.Println("💾 Storage:")
+		fmt.Printf("  Location: %s\n", location)
+		if configDir != "" {
+			fmt.Printf("  Config: %s/config.yaml\n", configDir)
+		}
+		if jiraDir != "" {
+			fmt.Printf("  Jira Status: %s/jira-status.json\n", jiraDir)
+		}
+		
+		fmt.Println()
+		fmt.Println("📧 Basic:")
 		fmt.Printf("  Email: %s\n", cfg.Email)
-		fmt.Printf("  Jira Service: %s\n", cfg.JiraServiceAddress)
-		fmt.Printf("  GitHub Token: %s\n", maskToken(cfg.GitHubToken))
-		fmt.Printf("  Jira API Token: %s\n", maskToken(cfg.JiraAPIToken))
 		if cfg.BranchPrefix != "" {
 			fmt.Printf("  Branch Prefix: %s\n", cfg.BranchPrefix)
+		}
+		
+		fmt.Println()
+		fmt.Println("🐙 GitHub:")
+		fmt.Printf("  Token: %s\n", maskToken(cfg.GitHubToken))
+		
+		fmt.Println()
+		fmt.Println("📋 Jira:")
+		fmt.Printf("  Service: %s\n", cfg.JiraServiceAddress)
+		fmt.Printf("  API Token: %s\n", maskToken(cfg.JiraAPIToken))
+		
+		fmt.Println()
+		fmt.Println("🤖 AI (optional):")
+		if cfg.DeepSeekKey != "" {
+			fmt.Printf("  DeepSeek Key: %s ✅\n", maskToken(cfg.DeepSeekKey))
+		} else {
+			fmt.Printf("  DeepSeek Key: not configured\n")
+		}
+		if cfg.OpenAIKey != "" {
+			fmt.Printf("  OpenAI Key: %s ✅\n", maskToken(cfg.OpenAIKey))
+		} else {
+			fmt.Printf("  OpenAI Key: not configured\n")
+		}
+		if cfg.OpenAIProxyURL != "" {
+			fmt.Printf("  OpenAI Proxy URL: %s\n", cfg.OpenAIProxyURL)
 		}
 	},
 }

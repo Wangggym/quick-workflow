@@ -81,6 +81,36 @@ func (c *Client) CreatePullRequest(input CreatePullRequestInput) (*PullRequest, 
 	}, nil
 }
 
+// ListPullRequests lists pull requests with the given state
+func (c *Client) ListPullRequests(owner, repo, state string) ([]PullRequest, error) {
+	opts := &github.PullRequestListOptions{
+		State: state,
+		ListOptions: github.ListOptions{
+			PerPage: 100,
+		},
+	}
+
+	prs, _, err := c.client.PullRequests.List(c.ctx, owner, repo, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list pull requests: %w", err)
+	}
+
+	result := make([]PullRequest, 0, len(prs))
+	for _, pr := range prs {
+		result = append(result, PullRequest{
+			Number:  pr.GetNumber(),
+			Title:   pr.GetTitle(),
+			Body:    pr.GetBody(),
+			HTMLURL: pr.GetHTMLURL(),
+			Head:    pr.GetHead().GetRef(),
+			Base:    pr.GetBase().GetRef(),
+			State:   pr.GetState(),
+		})
+	}
+
+	return result, nil
+}
+
 // GetPullRequest gets a pull request by number
 func (c *Client) GetPullRequest(owner, repo string, number int) (*PullRequest, error) {
 	pr, _, err := c.client.PullRequests.Get(c.ctx, owner, repo, number)
@@ -151,5 +181,40 @@ func ParseRepositoryFromURL(url string) (owner, repo string, err error) {
 	}
 
 	return parts[0], parts[1], nil
+}
+
+// GetPRByBranch gets a pull request by branch name
+func (c *Client) GetPRByBranch(owner, repo, branch string) (*PullRequest, error) {
+	// 构建查询条件：head 应该是 owner:branch
+	head := fmt.Sprintf("%s:%s", owner, branch)
+	
+	opts := &github.PullRequestListOptions{
+		State: "open",
+		Head:  head,
+		ListOptions: github.ListOptions{
+			PerPage: 10,
+		},
+	}
+
+	prs, _, err := c.client.PullRequests.List(c.ctx, owner, repo, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list pull requests: %w", err)
+	}
+
+	if len(prs) == 0 {
+		return nil, fmt.Errorf("no open pull request found for branch %s", branch)
+	}
+
+	// 返回第一个匹配的 PR
+	pr := prs[0]
+	return &PullRequest{
+		Number:  pr.GetNumber(),
+		Title:   pr.GetTitle(),
+		Body:    pr.GetBody(),
+		HTMLURL: pr.GetHTMLURL(),
+		Head:    pr.GetHead().GetRef(),
+		Base:    pr.GetBase().GetRef(),
+		State:   pr.GetState(),
+	}, nil
 }
 

@@ -118,7 +118,7 @@ go-version/
 ## 🔗 Package Dependencies
 
 ```
-cmd/qk/commands
+cmd/qkflow/commands
   ├─→ internal/github
   ├─→ internal/jira
   ├─→ internal/git
@@ -144,7 +144,7 @@ pkg/config
 ## 📖 Key Files Explained
 
 ### Entry Point
-- **`cmd/qk/main.go`**: Application entry point, calls command execution
+- **`cmd/qkflow/main.go`**: Application entry point, calls command execution
 
 ### Commands
 - **`commands/root.go`**: Root command setup, version, config display
@@ -182,7 +182,7 @@ pkg/config
 1. Architecture → `PROJECT_OVERVIEW.md`
 2. Structure → This file (`STRUCTURE.md`)
 3. Contributing → `CONTRIBUTING.md`
-4. Code → Start from `cmd/qk/main.go`
+4. Code → Start from `cmd/qkflow/main.go`
 
 ### For Building
 1. Dependencies → `go.mod`
