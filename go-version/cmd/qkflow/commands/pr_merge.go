@@ -67,21 +67,21 @@ func runPRMerge(cmd *cobra.Command, args []string) {
 		if err == nil && currentBranch != "" {
 			ui.Info(fmt.Sprintf("Checking for PR from current branch: %s", currentBranch))
 			
-			// 先尝试 open 状态的 PR
-			prs, err := ghClient.ListPullRequests(owner, repo, "open")
-			if err == nil {
-				for _, pr := range prs {
-					if pr.Head == currentBranch {
-						prNumber = pr.Number
-						ui.Success(fmt.Sprintf("Found PR #%d: %s", pr.Number, pr.Title))
-						break
-					}
+		// 先尝试 open 状态的 PR
+		prs, err := ghClient.ListPullRequests(owner, repo, "open", "")
+		if err == nil {
+			for _, pr := range prs {
+				if pr.Head == currentBranch {
+					prNumber = pr.Number
+					ui.Success(fmt.Sprintf("Found PR #%d: %s", pr.Number, pr.Title))
+					break
 				}
 			}
-			
-			// 如果没找到，尝试所有状态的 PR
-			if prNumber == 0 {
-				allPRs, err := ghClient.ListPullRequests(owner, repo, "all")
+		}
+		
+		// 如果没找到，尝试所有状态的 PR
+		if prNumber == 0 {
+			allPRs, err := ghClient.ListPullRequests(owner, repo, "all", "")
 				if err == nil {
 					for _, pr := range allPRs {
 						if pr.Head == currentBranch {
@@ -109,13 +109,13 @@ func runPRMerge(cmd *cobra.Command, args []string) {
 			}
 		}
 
-		// 如果用户选择手动输入或没有当前分支
-		if prNumber == 0 {
-			prs, err := ghClient.ListPullRequests(owner, repo, "open")
-			if err != nil {
-				ui.Error(fmt.Sprintf("Failed to list PRs: %v", err))
-				return
-			}
+	// 如果用户选择手动输入或没有当前分支
+	if prNumber == 0 {
+		prs, err := ghClient.ListPullRequests(owner, repo, "open", "")
+		if err != nil {
+			ui.Error(fmt.Sprintf("Failed to list PRs: %v", err))
+			return
+		}
 
 			if len(prs) == 0 {
 				ui.Error("No open pull requests found")

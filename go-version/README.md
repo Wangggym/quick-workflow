@@ -28,6 +28,7 @@ This is a complete rewrite of the original Shell-based quick-workflow tool in Go
 - **PR Merging** - Merge PRs and clean up branches automatically
 - **Quick Update** - Commit and push with PR title as commit message
 - **Jira Integration** - Automatically update Jira status and add PR links
+- **Watch Daemon** - 🆕 Automatically monitor PRs and update Jira when merged ⚡
 - **Interactive CLI** - Beautiful prompts and progress indicators
 - **Configuration Management** - Simple setup with `qkflow init`
 - **iCloud Sync** - Seamlessly sync configs across all your Mac devices ☁️
@@ -172,6 +173,50 @@ qkflow update
 5. ✅ Falls back to "update" if no PR found
 
 This is perfect for quick updates to an existing PR!
+
+### Watch Daemon (Auto-update Jira)
+
+**NEW!** Automatically monitor your PRs and update Jira when they're merged.
+
+```bash
+# Install and start watch daemon (with auto-start on login)
+qkflow watch install
+
+# Check daemon status
+qkflow watch status
+
+# View processing history
+qkflow watch history
+
+# View logs
+qkflow watch log
+qkflow watch log --follow
+
+# Manual check (without daemon)
+qkflow watch check
+
+# Stop/Start daemon
+qkflow watch stop
+qkflow watch start
+
+# Uninstall daemon
+qkflow watch uninstall
+```
+
+**What it does:**
+- ✅ Monitors YOUR PRs every 15 minutes (8:30-24:00)
+- ✅ Night mode: checks at 2:00 and 6:00 only
+- ✅ Auto-updates Jira status when PR is merged
+- ✅ Desktop notifications (macOS)
+- ✅ Auto-start on login (launchd on macOS)
+- ✅ Logs all activities
+- ✅ No manual intervention needed!
+
+**Prerequisites:**
+1. Run `qkflow jira setup` first to configure Jira status mappings
+2. Make sure "PR Merged" status is configured (default: "In Review")
+
+📖 See [Jira Status Config Guide](JIRA_STATUS_CONFIG.md) for setup details.
 
 ### Other Commands
 

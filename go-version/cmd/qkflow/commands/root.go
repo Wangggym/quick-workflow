@@ -70,6 +70,7 @@ func init() {
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(jiraCmd)
 	rootCmd.AddCommand(updateCmd)
+	rootCmd.AddCommand(watchCmd)
 }
 
 var versionCmd = &cobra.Command{

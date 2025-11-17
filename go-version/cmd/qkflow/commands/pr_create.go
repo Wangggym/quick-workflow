@@ -11,6 +11,7 @@ import (
 	"github.com/Wangggym/quick-workflow/internal/github"
 	"github.com/Wangggym/quick-workflow/internal/jira"
 	"github.com/Wangggym/quick-workflow/internal/ui"
+	"github.com/Wangggym/quick-workflow/internal/watcher"
 	"github.com/Wangggym/quick-workflow/pkg/config"
 	"github.com/spf13/cobra"
 )
@@ -286,6 +287,34 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 					}
 				}
 			}
+		}
+	}
+
+	// 添加到 watching list
+	watchingList, err := watcher.NewWatchingList()
+	if err != nil {
+		ui.Warning(fmt.Sprintf("Failed to load watching list: %v", err))
+	} else {
+		// Extract Jira tickets
+		jiraTickets := make([]string, 0)
+		if jiraTicket != "" {
+			jiraTickets = append(jiraTickets, jiraTicket)
+		}
+
+		watchingPR := watcher.WatchingPR{
+			PRNumber:    pr.Number,
+			Owner:       owner,
+			Repo:        repo,
+			Branch:      branchName,
+			Title:       commitMessage,
+			PRURL:       pr.HTMLURL,
+			JiraTickets: jiraTickets,
+		}
+
+		if err := watchingList.Add(watchingPR); err != nil {
+			ui.Warning(fmt.Sprintf("Failed to add PR to watching list: %v", err))
+		} else {
+			ui.Info("✅ Added PR to watching list for auto Jira updates")
 		}
 	}
 

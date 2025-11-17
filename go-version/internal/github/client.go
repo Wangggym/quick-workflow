@@ -37,13 +37,15 @@ func NewClient() (*Client, error) {
 
 // PullRequest represents a pull request
 type PullRequest struct {
-	Number  int
-	Title   string
-	Body    string
-	HTMLURL string
-	Head    string
-	Base    string
-	State   string
+	Number   int
+	Title    string
+	Body     string
+	HTMLURL  string
+	Head     string
+	Base     string
+	State    string
+	MergedAt string
+	MergedBy string
 }
 
 // CreatePullRequestInput contains the input for creating a PR
@@ -81,8 +83,8 @@ func (c *Client) CreatePullRequest(input CreatePullRequestInput) (*PullRequest, 
 	}, nil
 }
 
-// ListPullRequests lists pull requests with the given state
-func (c *Client) ListPullRequests(owner, repo, state string) ([]PullRequest, error) {
+// ListPullRequests lists pull requests with the given state and optional author filter
+func (c *Client) ListPullRequests(owner, repo, state, author string) ([]PullRequest, error) {
 	opts := &github.PullRequestListOptions{
 		State: state,
 		ListOptions: github.ListOptions{
@@ -95,16 +97,33 @@ func (c *Client) ListPullRequests(owner, repo, state string) ([]PullRequest, err
 		return nil, fmt.Errorf("failed to list pull requests: %w", err)
 	}
 
-	result := make([]PullRequest, 0, len(prs))
+	result := make([]PullRequest, 0)
 	for _, pr := range prs {
+		// Filter by author if specified
+		if author != "" && pr.User != nil && pr.User.GetLogin() != author {
+			continue
+		}
+
+		mergedAt := ""
+		if pr.MergedAt != nil {
+			mergedAt = pr.MergedAt.Format("2006-01-02T15:04:05Z")
+		}
+
+		mergedBy := ""
+		if pr.MergedBy != nil {
+			mergedBy = pr.MergedBy.GetLogin()
+		}
+
 		result = append(result, PullRequest{
-			Number:  pr.GetNumber(),
-			Title:   pr.GetTitle(),
-			Body:    pr.GetBody(),
-			HTMLURL: pr.GetHTMLURL(),
-			Head:    pr.GetHead().GetRef(),
-			Base:    pr.GetBase().GetRef(),
-			State:   pr.GetState(),
+			Number:   pr.GetNumber(),
+			Title:    pr.GetTitle(),
+			Body:     pr.GetBody(),
+			HTMLURL:  pr.GetHTMLURL(),
+			Head:     pr.GetHead().GetRef(),
+			Base:     pr.GetBase().GetRef(),
+			State:    pr.GetState(),
+			MergedAt: mergedAt,
+			MergedBy: mergedBy,
 		})
 	}
 
@@ -148,7 +167,7 @@ func GetCurrentRepository() (owner, repo string, err error) {
 	// 这里可以通过执行 git remote get-url origin 来获取
 	// 简化实现：从环境变量或配置读取
 	// 实际应该解析 git remote 输出
-	
+
 	// TODO: 实现通过 git 命令获取
 	return "", "", fmt.Errorf("not implemented: should parse git remote")
 }
@@ -187,7 +206,7 @@ func ParseRepositoryFromURL(url string) (owner, repo string, err error) {
 func (c *Client) GetPRByBranch(owner, repo, branch string) (*PullRequest, error) {
 	// 构建查询条件：head 应该是 owner:branch
 	head := fmt.Sprintf("%s:%s", owner, branch)
-	
+
 	opts := &github.PullRequestListOptions{
 		State: "open",
 		Head:  head,
@@ -217,4 +236,3 @@ func (c *Client) GetPRByBranch(owner, repo, branch string) (*PullRequest, error)
 		State:   pr.GetState(),
 	}, nil
 }
-
