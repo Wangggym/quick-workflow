@@ -110,11 +110,25 @@ var configCmd = &cobra.Command{
 		fmt.Println()
 		fmt.Println("🐙 GitHub:")
 		fmt.Printf("  Token: %s\n", maskToken(cfg.GitHubToken))
+		if cfg.GitHubOwner != "" {
+			fmt.Printf("  Owner: %s\n", cfg.GitHubOwner)
+		}
+		if cfg.GitHubRepo != "" {
+			fmt.Printf("  Repo: %s\n", cfg.GitHubRepo)
+		}
 		
 		fmt.Println()
 		fmt.Println("📋 Jira:")
 		fmt.Printf("  Service: %s\n", cfg.JiraServiceAddress)
 		fmt.Printf("  API Token: %s\n", maskToken(cfg.JiraAPIToken))
+		
+		fmt.Println()
+		fmt.Println("🔄 Auto Update:")
+		if cfg.AutoUpdate {
+			fmt.Printf("  Status: ✅ Enabled (checks every 24h)\n")
+		} else {
+			fmt.Printf("  Status: ❌ Disabled (run 'qkflow update-cli' to update manually)\n")
+		}
 		
 		fmt.Println()
 		fmt.Println("🤖 AI (optional):")
