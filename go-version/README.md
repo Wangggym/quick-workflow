@@ -4,7 +4,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![Release](https://img.shields.io/github/v/release/Wangggym/quick-workflow?style=flat&logo=github)](https://github.com/Wangggym/quick-workflow/releases)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/Wangggym/quick-workflow/build.yml?branch=main&style=flat&logo=github-actions)](https://github.com/Wangggym/quick-workflow/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Wangggym/quick-workflow/build.yml?branch=master&style=flat&logo=github-actions)](https://github.com/Wangggym/quick-workflow/actions)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey?style=flat)](https://github.com/Wangggym/quick-workflow)
 [![iCloud Sync](https://img.shields.io/badge/iCloud-Sync%20Enabled-blue?style=flat&logo=icloud)](ICLOUD_MIGRATION.md)
