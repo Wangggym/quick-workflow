@@ -14,11 +14,14 @@ type Config struct {
 	JiraAPIToken       string `mapstructure:"jira_api_token"`
 	JiraServiceAddress string `mapstructure:"jira_service_address"`
 	GitHubToken        string `mapstructure:"github_token"`
+	GitHubOwner        string `mapstructure:"github_owner"`
+	GitHubRepo         string `mapstructure:"github_repo"`
 	BranchPrefix       string `mapstructure:"branch_prefix"`
 	OpenAIKey          string `mapstructure:"openai_key"`
 	DeepSeekKey        string `mapstructure:"deepseek_key"`
 	OpenAIProxyURL     string `mapstructure:"openai_proxy_url"`
 	OpenAIProxyKey     string `mapstructure:"openai_proxy_key"`
+	AutoUpdate         bool   `mapstructure:"auto_update"`
 }
 
 var globalConfig *Config
@@ -46,6 +49,8 @@ func Load() (*Config, error) {
 	
 	// 绑定环境变量（支持常用的环境变量名）
 	viper.BindEnv("github_token", "GITHUB_TOKEN", "GH_TOKEN")
+	viper.BindEnv("github_owner", "GITHUB_OWNER")
+	viper.BindEnv("github_repo", "GITHUB_REPO")
 	viper.BindEnv("jira_api_token", "JIRA_API_TOKEN")
 	viper.BindEnv("jira_service_address", "JIRA_SERVICE_ADDRESS")
 	viper.BindEnv("branch_prefix", "GH_BRANCH_PREFIX")
@@ -54,6 +59,7 @@ func Load() (*Config, error) {
 	viper.BindEnv("openai_proxy_url", "OPENAI_PROXY_URL")
 	viper.BindEnv("openai_proxy_key", "OPENAI_PROXY_KEY")
 	viper.BindEnv("email", "EMAIL")
+	viper.BindEnv("auto_update", "AUTO_UPDATE")
 
 	// 尝试读取配置文件
 	if err := viper.ReadInConfig(); err != nil {
@@ -100,11 +106,14 @@ func Save(cfg *Config) error {
 	viper.Set("jira_api_token", cfg.JiraAPIToken)
 	viper.Set("jira_service_address", cfg.JiraServiceAddress)
 	viper.Set("github_token", cfg.GitHubToken)
+	viper.Set("github_owner", cfg.GitHubOwner)
+	viper.Set("github_repo", cfg.GitHubRepo)
 	viper.Set("branch_prefix", cfg.BranchPrefix)
 	viper.Set("openai_key", cfg.OpenAIKey)
 	viper.Set("deepseek_key", cfg.DeepSeekKey)
 	viper.Set("openai_proxy_url", cfg.OpenAIProxyURL)
 	viper.Set("openai_proxy_key", cfg.OpenAIProxyKey)
+	viper.Set("auto_update", cfg.AutoUpdate)
 
 	// 写入文件
 	if err := viper.WriteConfigAs(configFile); err != nil {
@@ -143,5 +152,11 @@ func IsConfigured() bool {
 
 func setDefaults() {
 	viper.SetDefault("branch_prefix", "")
+	viper.SetDefault("auto_update", true) // 默认启用自动更新
+}
+
+// GetConfigDir returns the config directory path
+func GetConfigDir() (string, error) {
+	return utils.GetQuickWorkflowConfigDir()
 }
 

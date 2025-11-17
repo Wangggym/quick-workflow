@@ -48,6 +48,22 @@ func runInit(cmd *cobra.Command, args []string) {
 	}
 	cfg.GitHubToken = ghToken
 
+	// GitHub Owner
+	githubOwner, err := ui.PromptInput("Enter your GitHub username or organization:", true)
+	if err != nil {
+		ui.Error(fmt.Sprintf("Failed to get GitHub owner: %v", err))
+		return
+	}
+	cfg.GitHubOwner = githubOwner
+
+	// GitHub Repo
+	githubRepo, err := ui.PromptInput("Enter your GitHub repository name:", true)
+	if err != nil {
+		ui.Error(fmt.Sprintf("Failed to get GitHub repo: %v", err))
+		return
+	}
+	cfg.GitHubRepo = githubRepo
+
 	// Jira Service Address
 	jiraAddr, err := ui.PromptInput("Enter your Jira service address (e.g., https://your-domain.atlassian.net):", true)
 	if err != nil {
@@ -82,6 +98,19 @@ func runInit(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	// Auto Update (default: true)
+	autoUpdate, err := ui.PromptConfirm("Enable automatic updates? (recommended)", true)
+	if err == nil {
+		cfg.AutoUpdate = autoUpdate
+	} else {
+		cfg.AutoUpdate = true // Default to true
+	}
+	if cfg.AutoUpdate {
+		ui.Success("✅ Auto-update enabled - qkflow will keep itself up to date")
+	} else {
+		ui.Info("ℹ️  Auto-update disabled - run 'qkflow update-cli' to update manually")
+	}
+
 	// Save configuration
 	if err := config.Save(cfg); err != nil {
 		ui.Error(fmt.Sprintf("Failed to save configuration: %v", err))
@@ -101,9 +130,11 @@ func runInit(cmd *cobra.Command, args []string) {
 	fmt.Println()
 	
 	ui.Info("You can now use the following commands:")
-	fmt.Println("  qkflow pr create  - Create a PR and update Jira")
-	fmt.Println("  qkflow pr merge   - Merge a PR and update Jira")
-	fmt.Println("  qkflow update     - Quick commit and push with PR title")
+	fmt.Println("  qkflow pr create   - Create a PR and update Jira")
+	fmt.Println("  qkflow pr merge    - Merge a PR and update Jira")
+	fmt.Println("  qkflow update      - Quick commit and push with PR title")
+	fmt.Println("  qkflow update-cli  - Update qkflow to the latest version")
+	fmt.Println("  qkflow jira list   - List Jira status mappings")
 	fmt.Println()
 }
 

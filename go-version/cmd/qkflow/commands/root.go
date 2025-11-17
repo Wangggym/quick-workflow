@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Wangggym/quick-workflow/internal/ui"
+	"github.com/Wangggym/quick-workflow/internal/updater"
 	"github.com/Wangggym/quick-workflow/internal/utils"
 	"github.com/Wangggym/quick-workflow/pkg/config"
 	"github.com/spf13/cobra"
@@ -22,8 +23,8 @@ var rootCmd = &cobra.Command{
 	Long: `qkflow is a CLI tool to streamline your GitHub and Jira workflow.
 It automates common tasks like creating PRs, updating Jira status, and more.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		// 对于某些命令不需要检查配置
-		skipConfigCheck := []string{"init", "version", "help"}
+		// 对于某些命令不需要检查配置和更新
+		skipConfigCheck := []string{"init", "version", "help", "update-cli"}
 		for _, skip := range skipConfigCheck {
 			if cmd.Name() == skip || cmd.Parent().Name() == skip {
 				return
@@ -31,7 +32,8 @@ It automates common tasks like creating PRs, updating Jira status, and more.`,
 		}
 
 		// 检查配置
-		if _, err := config.Load(); err != nil {
+		cfg, err := config.Load()
+		if err != nil {
 			ui.Error(fmt.Sprintf("Failed to load config: %v", err))
 			ui.Warning("Please run 'qkflow init' to configure the tool")
 			return
@@ -40,6 +42,13 @@ It automates common tasks like creating PRs, updating Jira status, and more.`,
 		if !config.IsConfigured() {
 			ui.Warning("Configuration incomplete. Please run 'qkflow init' to complete setup")
 		}
+
+		// 检查更新（后台静默执行，不阻塞主流程）
+		go func() {
+			if err := updater.CheckAndUpdate(Version, cfg.AutoUpdate); err != nil {
+				// 静默失败，不影响主流程
+			}
+		}()
 	},
 }
 
