@@ -120,13 +120,19 @@ func (c *Client) GetProjectStatuses(projectKey string) ([]string, error) {
 		return nil, fmt.Errorf("failed to get statuses: %w", err)
 	}
 
+	// 使用 map 去重
+	statusMap := make(map[string]bool)
 	var statusNames []string
 	for _, status := range statuses {
-		statusNames = append(statusNames, status.Name)
+		// 只添加未见过的状态
+		if !statusMap[status.Name] {
+			statusMap[status.Name] = true
+			statusNames = append(statusNames, status.Name)
+		}
 	}
 
 	// 如果项目有特定的工作流，这里应该过滤
-	// 简化实现：返回所有状态
+	// 简化实现：返回所有唯一状态
 	_ = project // 避免未使用变量警告
 	
 	return statusNames, nil
