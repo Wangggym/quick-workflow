@@ -132,18 +132,34 @@ var configCmd = &cobra.Command{
 		
 		fmt.Println()
 		fmt.Println("🤖 AI (optional):")
-		if cfg.DeepSeekKey != "" {
-			fmt.Printf("  DeepSeek Key: %s ✅\n", maskToken(cfg.DeepSeekKey))
+		
+		// Determine which AI service is active
+		hasDeepSeek := cfg.DeepSeekKey != ""
+		hasOpenAI := cfg.OpenAIKey != ""
+		
+		if hasDeepSeek {
+			fmt.Printf("  DeepSeek Key: %s ✅ (Active)\n", maskToken(cfg.DeepSeekKey))
 		} else {
 			fmt.Printf("  DeepSeek Key: not configured\n")
 		}
-		if cfg.OpenAIKey != "" {
-			fmt.Printf("  OpenAI Key: %s ✅\n", maskToken(cfg.OpenAIKey))
+		
+		if hasOpenAI {
+			if hasDeepSeek {
+				fmt.Printf("  OpenAI Key: %s ✅ (Backup)\n", maskToken(cfg.OpenAIKey))
+			} else {
+				fmt.Printf("  OpenAI Key: %s ✅ (Active)\n", maskToken(cfg.OpenAIKey))
+			}
 		} else {
 			fmt.Printf("  OpenAI Key: not configured\n")
 		}
+		
 		if cfg.OpenAIProxyURL != "" {
 			fmt.Printf("  OpenAI Proxy URL: %s\n", cfg.OpenAIProxyURL)
+		}
+		
+		if !hasDeepSeek && !hasOpenAI {
+			fmt.Println()
+			fmt.Println("  💡 Tip: Configure AI for automatic PR title/description generation")
 		}
 	},
 }
