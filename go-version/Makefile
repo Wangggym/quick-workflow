@@ -13,7 +13,7 @@ GOFLAGS := -v
 # Version info
 VERSION ?= $(shell git describe --tags --always --dirty)
 BUILD_TIME := $(shell date -u '+%Y-%m-%d_%H:%M:%S')
-LDFLAGS := -ldflags "-X github.com/Wangggym/quick-workflow/cmd/qkflow/commands.Version=${VERSION} -X github.com/Wangggym/quick-workflow/cmd/qkflow/commands.BuildTime=${BUILD_TIME}"
+LDFLAGS := -ldflags "-X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME}"
 
 # Initialize dependencies
 gen:
