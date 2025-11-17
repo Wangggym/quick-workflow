@@ -28,6 +28,7 @@ A modern CLI tool to automate your daily GitHub PR and Jira workflow, written in
 - **Browser Integration**: Auto-open PR in browser and copy URL to clipboard
 - **Quick Update**: Commit and push with PR title as commit message (`qkflow update`)
 - **iCloud Sync**: Automatic config sync across Mac devices (macOS only) ☁️
+- **Auto Update**: Automatically check and install updates (configurable) 🔄
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![Release](https://img.shields.io/github/v/release/Wangggym/quick-workflow?style=flat&logo=github)](https://github.com/Wangggym/quick-workflow/releases)
@@ -180,6 +181,9 @@ qkflow jira delete PROJ
 # Show current configuration and storage location
 qkflow config
 
+# Update qkflow to latest version
+qkflow update-cli
+
 # Show version
 qkflow version
 
@@ -266,6 +270,7 @@ GitHub Actions will automatically:
 ## 📚 Documentation
 
 - [Getting Started Guide](./go-version/GETTING_STARTED.md) - Quick start tutorial
+- [Auto Update Guide](./go-version/AUTO_UPDATE.md) - Automatic update feature
 - [Release Guide](./go-version/RELEASE.md) - Detailed release instructions
 - [Release Quickstart](./go-version/RELEASE_QUICKSTART.md) - Quick release commands
 - [iCloud Sync Guide](./go-version/ICLOUD_MIGRATION.md) - iCloud configuration sync

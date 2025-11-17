@@ -31,6 +31,7 @@ This is a complete rewrite of the original Shell-based quick-workflow tool in Go
 - **Interactive CLI** - Beautiful prompts and progress indicators
 - **Configuration Management** - Simple setup with `qkflow init`
 - **iCloud Sync** - Seamlessly sync configs across all your Mac devices ☁️
+- **Auto Update** - Automatically check and install updates (24h interval) 🔄
 
 ## 📦 Installation
 
@@ -177,6 +178,9 @@ This is perfect for quick updates to an existing PR!
 ```bash
 # Show current configuration
 qkflow config
+
+# Update qkflow to latest version
+qkflow update-cli
 
 # Show version
 qkflow version
