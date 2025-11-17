@@ -2,7 +2,7 @@
 
 > Streamlined GitHub and Jira workflow automation tools
 
-A collection of CLI tools to automate your daily GitHub PR and Jira workflow, available in both **Go** and **Shell** implementations.
+A modern CLI tool to automate your daily GitHub PR and Jira workflow, written in Go.
 
 ## 💡 Why use it
 
@@ -26,161 +26,194 @@ A collection of CLI tools to automate your daily GitHub PR and Jira workflow, av
 - **Interactive CLI**: User-friendly prompts with support for cancellation (Ctrl+C)
 - **One-Command Merge**: Merge PR, delete branch, and update Jira status
 - **Browser Integration**: Auto-open PR in browser and copy URL to clipboard
+- **Quick Update**: Commit and push with PR title as commit message (`qkflow update`)
+- **iCloud Sync**: Automatic config sync across Mac devices (macOS only) ☁️
 
-## 📦 Two Implementations
+[![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![Release](https://img.shields.io/github/v/release/Wangggym/quick-workflow?style=flat&logo=github)](https://github.com/Wangggym/quick-workflow/releases)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Wangggym/quick-workflow/build.yml?branch=master&style=flat&logo=github-actions)](https://github.com/Wangggym/quick-workflow/actions)
+[![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey?style=flat)](https://github.com/Wangggym/quick-workflow)
+[![iCloud Sync](https://img.shields.io/badge/iCloud-Sync%20Enabled-blue?style=flat&logo=icloud)](go-version/ICLOUD_MIGRATION.md)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](go-version/CONTRIBUTING.md)
 
-### Go Version (Recommended) 🆕
+## 📦 Installation
 
-Modern, fast, and cross-platform implementation written in Go.
-
-```bash
-# Install
-cd go-version
-make install
-
-# Usage
-qkg pr create    # Create a PR
-qkg pr merge     # Merge a PR
-qkg init         # Initialize configuration
-```
-
-**Benefits:**
-- ✅ Single binary, no dependencies
-- ✅ Cross-platform (macOS, Linux, Windows)
-- ✅ Fast execution
-- ✅ Better error handling
-- ✅ Type-safe configuration
-
-👉 [Go Version Documentation](./go-version/README.md)
-
-### Shell Version (Legacy)
-
-Original implementation using shell scripts.
+### Download Binary (Recommended)
 
 ```bash
-# Installation (one-time setup)
-cd quick-workflow/shell-version
-./install.sh
+# macOS (Apple Silicon)
+curl -L https://github.com/Wangggym/quick-workflow/releases/latest/download/qkflow-darwin-arm64 -o qkflow
+chmod +x qkflow
+sudo mv qkflow /usr/local/bin/
 
-# Usage
-qk pr create     # Create a PR
-qk pr merge      # Merge a PR
+# macOS (Intel)
+curl -L https://github.com/Wangggym/quick-workflow/releases/latest/download/qkflow-darwin-amd64 -o qkflow
+chmod +x qkflow
+sudo mv qkflow /usr/local/bin/
+
+# Linux
+curl -L https://github.com/Wangggym/quick-workflow/releases/latest/download/qkflow-linux-amd64 -o qkflow
+chmod +x qkflow
+sudo mv qkflow /usr/local/bin/
+
+# Windows (PowerShell)
+Invoke-WebRequest -Uri https://github.com/Wangggym/quick-workflow/releases/latest/download/qkflow-windows-amd64.exe -OutFile qkflow.exe
+# Move qkflow.exe to a directory in your PATH
 ```
 
-👉 [Shell Version Documentation](./shell-version/README.md)
-
-## 🎯 Quick Start
-
-### Option 1: Go Version (Recommended)
-
-1. **Prerequisites**:
-   ```bash
-   # Install Go
-   brew install go
-   
-   # Install GitHub CLI
-   brew install gh
-   gh auth login
-   
-   # Install Jira CLI (optional)
-   brew install jira-cli
-   jira init
-   ```
-
-2. **Install qkg**:
-   ```bash
-   cd go-version
-   make install
-   ```
-
-3. **Configure**:
-   ```bash
-   qkg init
-   # Follow the prompts to set up GitHub token, Jira credentials, etc.
-   ```
-
-4. **Use**:
-   ```bash
-   # Stage your changes
-   git add .
-   
-   # Create PR with interactive prompts
-   qkg pr create
-   
-   # Or with Jira ticket
-   qkg pr create PROJ-123
-   ```
-
-### Option 2: Shell Version
-
-See [shell-version/README.md](./shell-version/README.md) for installation instructions.
-
-## 📖 Core Commands
-
-### PR Create Workflow
+### Build from Source
 
 ```bash
-qkg pr create [jira-ticket]
+git clone https://github.com/Wangggym/quick-workflow.git
+cd quick-workflow/go-version
+make gen      # Initialize dependencies
+make build    # Build binary
+make install  # Install to GOPATH/bin
 ```
 
-What it does:
-1. ✅ Prompts for Jira ticket (optional)
-2. ✅ Fetches Jira issue details if ticket provided
-3. ✅ Prompts for PR title and description
-4. ✅ Lets you select change types (feat, fix, docs, etc.)
-5. ✅ Creates a new branch
-6. ✅ Stages and commits changes
-7. ✅ Pushes to remote
-8. ✅ Creates GitHub PR
-9. ✅ Links PR to Jira ticket
-10. ✅ Updates Jira status
-11. ✅ Copies PR URL to clipboard
-12. ✅ Opens PR in browser
+## ⚙️ Initial Setup
 
-### PR Merge Workflow
+Run the interactive setup wizard:
 
 ```bash
-qkg pr merge
+qkflow init
 ```
 
-What it does:
-1. ✅ Lists your open PRs
-2. ✅ Lets you select which PR to merge
-3. ✅ Merges the PR
-4. ✅ Deletes the remote branch
-5. ✅ Deletes the local branch
-6. ✅ Updates Jira status
-7. ✅ Switches back to default branch
+This will prompt you for:
+- GitHub token (auto-detected from `gh` CLI if available)
+- GitHub owner (username or organization)
+- GitHub repository name
+- Jira URL (e.g., https://your-company.atlassian.net)
+- Jira email
+- Jira API token ([Get one here](https://id.atlassian.com/manage-profile/security/api-tokens))
+- Optional: OpenAI API key for AI features
+
+**Configuration Storage:**
+
+✨ **NEW**: On macOS, all configs are automatically saved to iCloud Drive and synced across your devices!
+
+- **macOS with iCloud Drive**: `~/Library/Mobile Documents/com~apple~CloudDocs/.qkflow/` ☁️
+- **Local Storage** (fallback): `~/.qkflow/`
+
+Both locations contain:
+- `config.yaml` - Main configuration
+- `jira-status.json` - Jira status mappings
+
+Run `qkflow config` to see your actual storage location.
+
+## 🎯 Usage
+
+### Create a Pull Request
+
+```bash
+# With Jira ticket
+qkflow pr create PROJ-123
+
+# Interactive mode (will prompt for ticket)
+qkflow pr create
+```
+
+**What it does:**
+1. ✅ Fetches Jira issue details (if ticket provided)
+2. ✅ Prompts for PR title and description (or uses AI to generate)
+3. ✅ Creates a new git branch
+4. ✅ Commits your staged changes
+5. ✅ Pushes to remote
+6. ✅ Creates GitHub PR
+7. ✅ Adds PR link to Jira
+8. ✅ Updates Jira status
+9. ✅ Copies PR URL to clipboard
+
+### Merge a Pull Request
+
+```bash
+# Merge PR by number
+qkflow pr merge 123
+
+# Interactive mode (will show your open PRs)
+qkflow pr merge
+```
+
+**What it does:**
+1. ✅ Fetches PR details
+2. ✅ Confirms merge with you
+3. ✅ Merges the PR on GitHub
+4. ✅ Deletes remote branch
+5. ✅ Switches to main/master branch
+6. ✅ Deletes local branch
+7. ✅ Updates Jira status
+8. ✅ Adds merge comment to Jira
+
+### Quick Update (qkupdate equivalent)
+
+```bash
+# Quick commit and push with PR title as commit message
+qkflow update
+```
+
+**What it does:**
+1. ✅ Gets the current PR title from GitHub
+2. ✅ Stages all changes (`git add --all`)
+3. ✅ Commits with PR title as commit message
+4. ✅ Pushes to origin
+5. ✅ Falls back to "update" if no PR found
+
+Perfect for quick updates to an existing PR!
+
+### Jira Status Management
+
+```bash
+# List configured Jira status mappings
+qkflow jira list
+
+# Setup status mapping for a project
+qkflow jira setup PROJ
+
+# Delete status mapping
+qkflow jira delete PROJ
+```
+
+### Other Commands
+
+```bash
+# Show current configuration and storage location
+qkflow config
+
+# Show version
+qkflow version
+
+# Get help
+qkflow help
+qkflow pr --help
+qkflow jira --help
+```
 
 ## 🔧 Configuration
 
-### Go Version
-
-Configuration is stored in `~/.config/qk/config.yaml`:
+Configuration is stored in `~/.qkflow/config.yaml` (or iCloud on macOS):
 
 ```yaml
-github:
-  token: ghp_xxx
-jira:
-  email: your.email@example.com
-  api_token: xxx
-  server: https://your-domain.atlassian.net
-branch_prefix: "ym"  # Optional: prefix for branch names
+email: your.email@example.com
+github_token: ghp_your_github_token
+github_owner: your-username
+github_repo: your-repo
+jira_api_token: your_jira_token
+jira_service_address: https://your-domain.atlassian.net
+jira_email: your.email@example.com
+branch_prefix: feature  # optional
+openai_key: sk-your_openai_key  # optional
+deepseek_key: sk-your_deepseek_key  # optional
 ```
 
-You can also set environment variables:
-- `GITHUB_TOKEN` or `GH_TOKEN`
+You can also use environment variables:
+- `GITHUB_TOKEN`
 - `JIRA_API_TOKEN`
-- `JIRA_SERVICE_ADDRESS`
-- `GH_BRANCH_PREFIX`
-
-### Shell Version
-
-Uses environment variables in `.zshrc` or `.bashrc`. See [shell-version/README.md](./shell-version/README.md).
+- `JIRA_URL`
+- `OPENAI_API_KEY`
+- `DEEPSEEK_API_KEY`
 
 ## 🛠️ Development
-
-### Go Version
 
 ```bash
 cd go-version
@@ -197,37 +230,73 @@ make check
 # Run tests
 make test
 
-# Development mode (quick run)
-make dev ARGS="pr create"
-
 # Build
 make build
 
-# Install
+# Build for all platforms
+make build-all
+
+# Install to system
 make install
+
+# Clean build artifacts
+make clean
+
+# Show all commands
+make help
 ```
 
-See [go-version/README.md](./go-version/README.md) for more details.
+## 🚀 Release
+
+```bash
+# Check and prepare for release
+make release VERSION=v1.0.1
+
+# Create and push tag (triggers CI/CD)
+git tag -a v1.0.1 -m "Release v1.0.1"
+git push origin v1.0.1
+```
+
+GitHub Actions will automatically:
+- Run tests
+- Build binaries for all platforms
+- Create a GitHub Release
+- Upload all binaries
 
 ## 📚 Documentation
 
-- [Go Version Guide](./go-version/README.md) - Recommended implementation
-- [Shell Version Guide](./shell-version/README.md) - Legacy implementation
-- [Migration Guide](./go-version/MIGRATION.md) - Migrating from shell to Go version
+- [Getting Started Guide](./go-version/GETTING_STARTED.md) - Quick start tutorial
+- [Release Guide](./go-version/RELEASE.md) - Detailed release instructions
+- [Release Quickstart](./go-version/RELEASE_QUICKSTART.md) - Quick release commands
+- [iCloud Sync Guide](./go-version/ICLOUD_MIGRATION.md) - iCloud configuration sync
+- [Jira Configuration](./go-version/JIRA_STATUS_CONFIG.md) - Jira setup details
+- [Contributing Guide](./go-version/CONTRIBUTING.md) - How to contribute
 - [Project Structure](./go-version/STRUCTURE.md) - Codebase overview
-- [Contributing](./go-version/CONTRIBUTING.md) - How to contribute
 
-## 🆚 Comparison
+## ✨ Why qkflow?
 
-| Feature | Go Version | Shell Version |
-|---------|-----------|---------------|
-| Installation | Single binary | Multiple dependencies |
-| Performance | Fast | Slower |
-| Cross-platform | ✅ Yes | 🔶 Unix-like only |
-| Error handling | ✅ Robust | 🔶 Basic |
-| Maintenance | ✅ Active | 🔶 Legacy |
-| Cancel support | ✅ Ctrl+C anywhere | ❌ Limited |
-| Type safety | ✅ Yes | ❌ No |
+**Before qkflow:**
+```bash
+git checkout -b feature/my-feature
+git add .
+git commit -m "Add feature"
+git push origin feature/my-feature
+gh pr create --title "Add feature" --body "Description..."
+# Open Jira, find ticket, add PR link, update status...
+```
+
+**With qkflow:**
+```bash
+qkflow pr create PROJ-123
+# Done! ✨
+```
+
+## 🔒 Security
+
+- Tokens are stored securely with file permissions `0600`
+- iCloud storage is encrypted and secure
+- Never commit config files
+- Use environment variables for CI/CD
 
 ## 🤝 Contributing
 
@@ -239,12 +308,19 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- Built with [Cobra](https://github.com/spf13/cobra) for CLI
-- Uses [GitHub CLI](https://cli.github.com/) for GitHub API
-- Uses [Jira CLI](https://github.com/ankitpokhrel/jira-cli) for Jira integration
+- [Cobra](https://github.com/spf13/cobra) - CLI framework
+- [Survey](https://github.com/AlecAivazis/survey) - Interactive prompts
+- [go-github](https://github.com/google/go-github) - GitHub API client
+- [go-jira](https://github.com/andygrunwald/go-jira) - Jira API client
+
+## 📞 Support
+
+- 🐛 [Report a bug](https://github.com/Wangggym/quick-workflow/issues/new?labels=bug)
+- 💡 [Request a feature](https://github.com/Wangggym/quick-workflow/issues/new?labels=enhancement)
+- 📖 [View Documentation](https://github.com/Wangggym/quick-workflow)
 
 ---
 
-**Maintainer**: [@Wangggym](https://github.com/Wangggym)
+**Made with ❤️ by [@Wangggym](https://github.com/Wangggym)**
 
-💡 **Tip**: Star this repo if you find it useful!
+⭐ **Star this repo if you find it useful!**
