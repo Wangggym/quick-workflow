@@ -85,6 +85,29 @@ func PromptConfirm(message string, defaultValue bool) (bool, error) {
 	return result, nil
 }
 
+// PromptOptional prompts for an optional action with space to select, enter to skip
+// This provides better UX: Space = Yes, Enter = Skip (default)
+func PromptOptional(message string) (bool, error) {
+	options := []string{
+		"⏭️  Skip (default)",
+		"✅ Yes, continue",
+	}
+	
+	prompt := &survey.Select{
+		Message: message,
+		Options: options,
+		Default: options[0], // Default to Skip
+	}
+
+	var result string
+	if err := survey.AskOne(prompt, &result); err != nil {
+		return false, err
+	}
+
+	// Check if user selected "Yes"
+	return result == options[1], nil
+}
+
 // PromptSelect prompts for selecting one option
 func PromptSelect(message string, options []string) (string, error) {
 	prompt := &survey.Select{
