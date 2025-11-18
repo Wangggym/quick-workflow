@@ -236,3 +236,17 @@ func (c *Client) GetPRByBranch(owner, repo, branch string) (*PullRequest, error)
 		State:   pr.GetState(),
 	}, nil
 }
+
+// AddPRComment adds a comment to a pull request
+func (c *Client) AddPRComment(owner, repo string, prNumber int, body string) error {
+	comment := &github.IssueComment{
+		Body: github.String(body),
+	}
+
+	_, _, err := c.client.Issues.CreateComment(c.ctx, owner, repo, prNumber, comment)
+	if err != nil {
+		return fmt.Errorf("failed to add comment to PR #%d: %w", prNumber, err)
+	}
+
+	return nil
+}
