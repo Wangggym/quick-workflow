@@ -28,6 +28,7 @@ This is a complete rewrite of the original Shell-based quick-workflow tool in Go
 - **PR Merging** - Merge PRs and clean up branches automatically
 - **Quick Update** - Commit and push with PR title as commit message
 - **Jira Integration** - Automatically update Jira status and add PR links
+- **Jira Reader** - 🆕 Read and export Jira issues (optimized for Cursor AI) 🤖
 - **Watch Daemon** - 🆕 Automatically monitor PRs and update Jira when merged ⚡
 - **Interactive CLI** - Beautiful prompts and progress indicators
 - **Configuration Management** - Simple setup with `qkflow init`
@@ -191,6 +192,41 @@ qkflow update
 5. ✅ Falls back to "update" if no PR found
 
 This is perfect for quick updates to an existing PR!
+
+### Jira Reader (Cursor AI Integration)
+
+**NEW!** Read and export Jira issues, optimized for Cursor AI.
+
+```bash
+# Intelligent read (recommended for Cursor AI)
+qkflow jira read NA-9245
+
+# Quick terminal view
+qkflow jira show NA-9245
+qkflow jira show NA-9245 --full    # Full details
+
+# Export to files
+qkflow jira export NA-9245
+qkflow jira export NA-9245 --with-images    # Include images
+
+# Clean up exports
+qkflow jira clean NA-9245
+qkflow jira clean --all
+```
+
+**For Cursor AI users:**
+
+Simply tell Cursor in chat:
+```
+"通过 qkflow 工具读取 NA-9245 所有内容并总结"
+```
+
+Cursor will automatically:
+1. ✅ Run the qkflow command
+2. ✅ Read exported files (including images)
+3. ✅ Provide comprehensive analysis
+
+📖 See [Jira Reader Guide](JIRA_READER.md) for detailed documentation.
 
 ### Watch Daemon (Auto-update Jira)
 

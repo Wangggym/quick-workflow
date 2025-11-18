@@ -3,6 +3,7 @@ package jira
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Wangggym/quick-workflow/pkg/config"
 	jira "github.com/andygrunwald/go-jira"
@@ -44,9 +45,36 @@ type Issue struct {
 	Description string
 	Status      string
 	Type        string
+	Priority    string
+	Assignee    string
+	Reporter    string
+	Created     string
+	Updated     string
+	Attachments []Attachment
+	Comments    []Comment
 }
 
-// GetIssue gets a Jira issue by key
+// Attachment represents a Jira attachment
+type Attachment struct {
+	ID       string
+	Filename string
+	Size     int64
+	MimeType string
+	Content  string // URL to download
+	Created  string
+	Author   string
+}
+
+// Comment represents a Jira comment
+type Comment struct {
+	ID      string
+	Author  string
+	Body    string
+	Created string
+	Updated string
+}
+
+// GetIssue gets a Jira issue by key (basic info only)
 func (c *Client) GetIssue(issueKey string) (*Issue, error) {
 	issue, _, err := c.client.Issue.Get(issueKey, nil)
 	if err != nil {
@@ -60,6 +88,95 @@ func (c *Client) GetIssue(issueKey string) (*Issue, error) {
 		Status:      issue.Fields.Status.Name,
 		Type:        issue.Fields.Type.Name,
 	}, nil
+}
+
+// GetIssueDetailed gets a Jira issue with all details including attachments and comments
+func (c *Client) GetIssueDetailed(issueKey string) (*Issue, error) {
+	issue, _, err := c.client.Issue.Get(issueKey, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get issue %s: %w", issueKey, err)
+	}
+
+	cfg := config.Get()
+
+	// Build issue struct
+	result := &Issue{
+		Key:         issue.Key,
+		Summary:     issue.Fields.Summary,
+		Description: issue.Fields.Description,
+		Status:      issue.Fields.Status.Name,
+		Type:        issue.Fields.Type.Name,
+	}
+
+	// Priority
+	if issue.Fields.Priority != nil {
+		result.Priority = issue.Fields.Priority.Name
+	}
+
+	// Assignee
+	if issue.Fields.Assignee != nil {
+		result.Assignee = issue.Fields.Assignee.DisplayName
+	}
+
+	// Reporter
+	if issue.Fields.Reporter != nil {
+		result.Reporter = issue.Fields.Reporter.DisplayName
+	}
+
+	// Dates (convert jira.Time to string)
+	result.Created = time.Time(issue.Fields.Created).Format(time.RFC3339)
+	result.Updated = time.Time(issue.Fields.Updated).Format(time.RFC3339)
+
+	// Attachments
+	if issue.Fields.Attachments != nil {
+		for _, att := range issue.Fields.Attachments {
+			attachment := Attachment{
+				ID:       att.ID,
+				Filename: att.Filename,
+				Size:     int64(att.Size),
+				MimeType: att.MimeType,
+				Content:  att.Content,
+				Created:  att.Created, // Keep as string from API
+			}
+			if att.Author != nil {
+				attachment.Author = att.Author.DisplayName
+			}
+			result.Attachments = append(result.Attachments, attachment)
+		}
+	}
+
+	// Comments
+	if issue.Fields.Comments != nil {
+		for _, c := range issue.Fields.Comments.Comments {
+			comment := Comment{
+				ID:      c.ID,
+				Body:    c.Body,
+				Created: c.Created,
+				Updated: c.Updated,
+			}
+			// Author is a User struct (not pointer), check DisplayName instead
+			if c.Author.DisplayName != "" {
+				comment.Author = c.Author.DisplayName
+			}
+			result.Comments = append(result.Comments, comment)
+		}
+	}
+
+	// Build Jira URL
+	if cfg != nil && cfg.JiraServiceAddress != "" {
+		// Store URL in a way that can be accessed (we'll add a method for this)
+	}
+
+	return result, nil
+}
+
+// GetJiraURL returns the full Jira URL for an issue
+func (c *Client) GetJiraURL(issueKey string) string {
+	cfg := config.Get()
+	if cfg == nil || cfg.JiraServiceAddress == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s/browse/%s", strings.TrimRight(cfg.JiraServiceAddress, "/"), issueKey)
 }
 
 // UpdateStatus updates the status of a Jira issue

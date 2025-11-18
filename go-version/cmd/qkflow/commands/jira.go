@@ -10,8 +10,17 @@ import (
 
 var jiraCmd = &cobra.Command{
 	Use:   "jira",
-	Short: "Manage Jira status mappings",
-	Long:  `View, edit, and delete Jira status mappings for different projects.`,
+	Short: "Manage Jira issues and status mappings",
+	Long: `Work with Jira issues and manage status mappings.
+
+Available commands:
+  show    - Display a Jira issue in the terminal
+  export  - Export a Jira issue to files (with optional images)
+  read    - Intelligently read an issue (recommended for Cursor)
+  clean   - Clean up exported files
+  list    - List status mappings
+  setup   - Setup status mappings
+  delete  - Delete status mappings`,
 }
 
 var jiraListCmd = &cobra.Command{
@@ -114,6 +123,13 @@ var jiraDeleteCmd = &cobra.Command{
 }
 
 func init() {
+	// Issue commands (new)
+	jiraCmd.AddCommand(jiraShowCmd)
+	jiraCmd.AddCommand(jiraExportCmd)
+	jiraCmd.AddCommand(jiraReadCmd)
+	jiraCmd.AddCommand(jiraCleanCmd)
+	
+	// Status mapping commands (existing)
 	jiraCmd.AddCommand(jiraListCmd)
 	jiraCmd.AddCommand(jiraSetupCmd)
 	jiraCmd.AddCommand(jiraDeleteCmd)
