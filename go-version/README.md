@@ -25,6 +25,7 @@ This is a complete rewrite of the original Shell-based quick-workflow tool in Go
 ## ✨ Features
 
 - **PR Creation** - Create PRs with automatic branch creation, commit, and push
+- **PR Editor** - 🆕 Web-based editor for adding descriptions with images/videos 🎨
 - **PR Merging** - Merge PRs and clean up branches automatically
 - **Quick Update** - Commit and push with PR title as commit message
 - **Jira Integration** - Automatically update Jira status and add PR links
@@ -149,13 +150,15 @@ qkflow pr create
 1. ✅ Fetches Jira issue details (if ticket provided)
 2. ✅ Prompts for PR title and description
 3. ✅ Lets you select change types (feat, fix, docs, etc.)
-4. ✅ Creates a new git branch
-5. ✅ Commits your staged changes
-6. ✅ Pushes to remote
-7. ✅ Creates GitHub PR
-8. ✅ Adds PR link to Jira
-9. ✅ Updates Jira status (optional)
-10. ✅ Copies PR URL to clipboard
+4. ✅ ⭐ **NEW**: Optionally add detailed description with images/videos (web editor)
+5. ✅ Creates a new git branch
+6. ✅ Commits your staged changes
+7. ✅ Pushes to remote
+8. ✅ Creates GitHub PR
+9. ✅ ⭐ **NEW**: Uploads files and adds comment to GitHub & Jira
+10. ✅ Adds PR link to Jira
+11. ✅ Updates Jira status (optional)
+12. ✅ Copies PR URL to clipboard
 
 ### Merge a Pull Request
 
@@ -192,6 +195,49 @@ qkflow update
 5. ✅ Falls back to "update" if no PR found
 
 This is perfect for quick updates to an existing PR!
+
+### PR Editor (Add Rich Descriptions)
+
+**NEW!** Add detailed descriptions with images and videos to your PRs using a beautiful web-based editor.
+
+```bash
+# During pr create, you'll be prompted:
+? Add detailed description with images/videos?
+  > ⏭️  Skip (default)    # Press Enter to skip
+    ✅ Yes, continue       # Press Space to toggle, then Enter
+
+# If you select "Yes, continue":
+🌐 Opening editor in your browser...
+📝 Please edit your content in the browser and click 'Save and Continue'
+```
+
+**The web editor provides:**
+
+- 📝 **Markdown Editor** with live preview and formatting toolbar
+- 🖼️ **Drag & Drop** images and videos from Finder/Explorer
+- 📋 **Paste** images directly from clipboard (Cmd+V / Ctrl+V)
+- 🎨 **GitHub-style UI** with dark theme
+- ⚡ **Instant Upload** to both GitHub PR and Jira issue
+- 🔄 **Auto-conversion** of local paths to online URLs
+
+**Supported formats:**
+- Images: PNG, JPG, JPEG, GIF, WebP, SVG
+- Videos: MP4, MOV, WebM, AVI
+
+**What happens after you save:**
+
+1. ✅ Files are uploaded to GitHub and Jira
+2. ✅ Markdown paths are replaced with actual URLs
+3. ✅ Description is added as a comment to the GitHub PR
+4. ✅ Same description is added as a comment to the Jira issue
+5. ✅ Temporary files are cleaned up
+
+**Perfect for:**
+- Bug fixes with before/after screenshots
+- Features with demo videos
+- Visual documentation of UI changes
+- Architecture diagrams
+- Test results and screenshots
 
 ### Jira Reader (Cursor AI Integration)
 

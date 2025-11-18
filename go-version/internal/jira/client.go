@@ -2,6 +2,7 @@ package jira
 
 import (
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -221,6 +222,29 @@ func (c *Client) AddComment(issueKey, comment string) error {
 	}
 
 	return nil
+}
+
+// AddAttachment adds an attachment to a Jira issue
+func (c *Client) AddAttachment(issueKey, filename string, content io.Reader) (*Attachment, error) {
+	attachments, _, err := c.client.Issue.PostAttachment(issueKey, content, filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add attachment to %s: %w", issueKey, err)
+	}
+
+	if attachments == nil || len(*attachments) == 0 {
+		return nil, fmt.Errorf("no attachment was created")
+	}
+
+	attachment := (*attachments)[0]
+	return &Attachment{
+		ID:       attachment.ID,
+		Filename: attachment.Filename,
+		Size:     int64(attachment.Size),
+		MimeType: attachment.MimeType,
+		Content:  attachment.Content,
+		Created:  attachment.Created,
+		Author:   attachment.Author.DisplayName,
+	}, nil
 }
 
 // GetProjectStatuses gets all available statuses for a project
