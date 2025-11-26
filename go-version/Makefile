@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 HIDE ?= @
 
-.PHONY: gen fix check dev run test test-cov test-fast build build-all install clean help
+.PHONY: gen fix check dev run test test-cov test-fast build build-all install local quick clean help
 
 # Variables
 BINARY_NAME := qkflow
@@ -95,6 +95,17 @@ install: build
 	$(HIDE)cp $(BUILD_DIR)/$(BINARY_NAME) $(shell go env GOPATH)/bin/$(BINARY_NAME)
 	@echo "✅ Installed to $(shell go env GOPATH)/bin/$(BINARY_NAME)"
 
+# Quick local build and install (one-command)
+local: 
+	@echo "⚡ Quick build and install..."
+	@$(GO) build -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/qkflow
+	@cp $(BUILD_DIR)/$(BINARY_NAME) $(shell go env GOPATH)/bin/$(BINARY_NAME)
+	@echo "✅ Built and installed to $(shell go env GOPATH)/bin/$(BINARY_NAME)"
+	@echo "💡 Run 'qkflow version' to verify"
+
+# Alias for local
+quick: local
+
 # Release helper
 release:
 	@if [ -z "$(VERSION)" ]; then \
@@ -144,6 +155,8 @@ help:
 	@echo "  make build        - Build binary"
 	@echo "  make build-all    - Build for all platforms"
 	@echo "  make install      - Install to GOPATH/bin"
+	@echo "  make local        - ⚡ Quick build and install (one-step)"
+	@echo "  make quick        - Alias for 'make local'"
 	@echo ""
 	@echo "Release:"
 	@echo "  make release      - Create release (requires VERSION env)"
