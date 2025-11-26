@@ -43,6 +43,19 @@ func CreateBranch(branchName string) error {
 	return nil
 }
 
+// CheckoutBranch checks out an existing branch
+func CheckoutBranch(branchName string) error {
+	cmd := exec.Command("git", "checkout", branchName)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to checkout branch %s: %w\n%s", branchName, err, stderr.String())
+	}
+
+	return nil
+}
+
 // AddAll stages all changes
 func AddAll() error {
 	cmd := exec.Command("git", "add", "--all")

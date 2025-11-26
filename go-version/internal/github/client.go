@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/Wangggym/quick-workflow/pkg/config"
@@ -202,6 +203,61 @@ func ParseRepositoryFromURL(url string) (owner, repo string, err error) {
 	return parts[0], parts[1], nil
 }
 
+// ParsePRFromURL parses owner, repo and PR number from GitHub PR URL
+// Supports formats like:
+// - https://github.com/owner/repo/pull/123
+// - https://github.com/owner/repo/pull/123/files
+// - https://github.com/owner/repo/pull/123/commits
+// - https://github.com/owner/repo/pull/123/checks
+// - http://github.com/owner/repo/pull/123
+// - github.com/owner/repo/pull/123
+func ParsePRFromURL(url string) (owner, repo string, prNumber int, err error) {
+	url = strings.TrimSpace(url)
+
+	// 移除协议部分
+	url = strings.TrimPrefix(url, "https://")
+	url = strings.TrimPrefix(url, "http://")
+
+	// 移除 github.com
+	url = strings.TrimPrefix(url, "github.com/")
+
+	// 移除可能的 query params 和 fragments
+	if idx := strings.IndexAny(url, "?#"); idx != -1 {
+		url = url[:idx]
+	}
+
+	// 分割路径: owner/repo/pull/123 或 owner/repo/pull/123/files
+	parts := strings.Split(url, "/")
+	if len(parts) < 4 {
+		return "", "", 0, fmt.Errorf("invalid PR URL format: expected github.com/owner/repo/pull/number")
+	}
+
+	if parts[2] != "pull" {
+		return "", "", 0, fmt.Errorf("invalid PR URL format: missing 'pull' segment")
+	}
+
+	owner = parts[0]
+	repo = parts[1]
+	
+	// 解析 PR 号（parts[3] 可能后面还有 /files, /commits 等）
+	prStr := parts[3]
+	
+	prNumber, err = strconv.Atoi(prStr)
+	if err != nil {
+		return "", "", 0, fmt.Errorf("invalid PR number in URL: %s", prStr)
+	}
+
+	return owner, repo, prNumber, nil
+}
+
+// IsPRURL checks if a string looks like a GitHub PR URL
+func IsPRURL(s string) bool {
+	s = strings.TrimSpace(s)
+	s = strings.TrimPrefix(s, "https://")
+	s = strings.TrimPrefix(s, "http://")
+	return strings.HasPrefix(s, "github.com/") && strings.Contains(s, "/pull/")
+}
+
 // GetPRByBranch gets a pull request by branch name
 func (c *Client) GetPRByBranch(owner, repo, branch string) (*PullRequest, error) {
 	// 构建查询条件：head 应该是 owner:branch
@@ -235,4 +291,57 @@ func (c *Client) GetPRByBranch(owner, repo, branch string) (*PullRequest, error)
 		Base:    pr.GetBase().GetRef(),
 		State:   pr.GetState(),
 	}, nil
+}
+
+// AddPRComment adds a comment to a pull request
+func (c *Client) AddPRComment(owner, repo string, prNumber int, body string) error {
+	comment := &github.IssueComment{
+		Body: github.String(body),
+	}
+
+	_, _, err := c.client.Issues.CreateComment(c.ctx, owner, repo, prNumber, comment)
+	if err != nil {
+		return fmt.Errorf("failed to add comment to PR #%d: %w", prNumber, err)
+	}
+
+	return nil
+}
+
+// ApprovePullRequest approves a pull request
+func (c *Client) ApprovePullRequest(owner, repo string, number int, body string) error {
+	event := "APPROVE"
+	review := &github.PullRequestReviewRequest{
+		Event: &event,
+	}
+
+	if body != "" {
+		review.Body = &body
+	}
+
+	_, _, err := c.client.PullRequests.CreateReview(c.ctx, owner, repo, number, review)
+	if err != nil {
+		return fmt.Errorf("failed to approve pull request: %w", err)
+	}
+
+	return nil
+}
+
+// IsPRMergeable checks if a PR is mergeable
+func (c *Client) IsPRMergeable(owner, repo string, number int) (bool, error) {
+	pr, _, err := c.client.PullRequests.Get(c.ctx, owner, repo, number)
+	if err != nil {
+		return false, fmt.Errorf("failed to get pull request: %w", err)
+	}
+
+	// Check if PR is open
+	if pr.GetState() != "open" {
+		return false, fmt.Errorf("PR is not open (state: %s)", pr.GetState())
+	}
+
+	// Check if mergeable
+	if pr.Mergeable != nil && !*pr.Mergeable {
+		return false, fmt.Errorf("PR has conflicts and cannot be merged")
+	}
+
+	return true, nil
 }
