@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/Wangggym/quick-workflow/internal/git"
 	"github.com/Wangggym/quick-workflow/internal/github"
@@ -225,15 +226,35 @@ func runPRApprove(cmd *cobra.Command, args []string) {
 
 	// 批准 PR
 	ui.Info(fmt.Sprintf("Approving PR #%d...", prNumber))
+	approvalSucceeded := true
 	if err := ghClient.ApprovePullRequest(owner, repo, prNumber, comment); err != nil {
-		ui.Error(fmt.Sprintf("Failed to approve PR: %v", err))
-		return
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "422") {
+			approvalSucceeded = false
+			ui.Warning("Cannot approve this PR (you may be the author or already approved)")
+			fmt.Println()
+			
+			// 如果带了 -m 参数，直接跳过批准继续合并
+			if approveAndMerge {
+				ui.Info("💡 Skipping approval, proceeding directly to merge...")
+			} else {
+				// 没有 -m 参数，提示错误并退出
+				ui.Error("Approval failed. If you want to merge directly, use the -m flag:")
+				ui.Info(fmt.Sprintf("  qkflow pr approve %d -m", prNumber))
+				return
+			}
+		} else {
+			ui.Error(fmt.Sprintf("Failed to approve PR: %v", err))
+			return
+		}
 	}
 
-	if comment != "" {
-		ui.Success(fmt.Sprintf("✅ PR approved with comment: %s", comment))
-	} else {
-		ui.Success("✅ PR approved!")
+	if approvalSucceeded {
+		if comment != "" {
+			ui.Success(fmt.Sprintf("✅ PR approved with comment: %s", comment))
+		} else {
+			ui.Success("✅ PR approved!")
+		}
 	}
 
 	// 如果需要自动合并
@@ -247,14 +268,7 @@ func runPRApprove(cmd *cobra.Command, args []string) {
 			return
 		}
 
-		// 确认合并
-		confirmMerge, err := ui.PromptConfirm("Proceed with merging the PR?", true)
-		if err != nil || !confirmMerge {
-			ui.Info("Merge skipped")
-			return
-		}
-
-		// 执行合并（复用 pr merge 的逻辑）
+		// 执行合并
 		ui.Info(fmt.Sprintf("Merging PR #%d...", prNumber))
 		if err := ghClient.MergePullRequest(owner, repo, prNumber, pr.Title); err != nil {
 			ui.Error(fmt.Sprintf("Failed to merge PR: %v", err))
