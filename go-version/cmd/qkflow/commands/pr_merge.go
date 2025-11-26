@@ -15,35 +15,93 @@ import (
 )
 
 var prMergeCmd = &cobra.Command{
-	Use:   "merge [pr-number]",
+	Use:   "merge [pr-number|pr-url]",
 	Short: "Merge a PR and update Jira status",
 	Long: `Merge a pull request and automatically:
   - Merge the PR on GitHub
   - Delete the remote branch
   - Delete the local branch
-  - Update Jira status to Done/Merged`,
+  - Update Jira status to Done/Merged
+
+Arguments:
+  [pr-number|pr-url]  PR number (e.g., 123) or full GitHub PR URL
+                      (e.g., https://github.com/owner/repo/pull/123)
+                      Omit to auto-detect from current branch
+
+Examples:
+  qkflow pr merge 123
+  qkflow pr merge https://github.com/brain/planning-api/pull/2001
+  qkflow pr merge`,
 	Args: cobra.MaximumNArgs(1),
 	Run:  runPRMerge,
 }
 
 func runPRMerge(cmd *cobra.Command, args []string) {
-	// 检查是否在 Git 仓库中
-	if !git.IsGitRepository() {
-		ui.Error("Not a git repository")
-		return
-	}
+	var owner, repo string
+	var prNumber int
+	var err error
 
-	// 获取仓库信息
-	remoteURL, err := git.GetRemoteURL()
-	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to get remote URL: %v", err))
-		return
-	}
+	// 如果提供了参数，检查是否是 URL 格式
+	if len(args) > 0 {
+		arg := args[0]
+		
+		// 检查是否是 GitHub PR URL
+		if github.IsPRURL(arg) {
+			ui.Info("Detected GitHub PR URL, parsing...")
+			owner, repo, prNumber, err = github.ParsePRFromURL(arg)
+			if err != nil {
+				ui.Error(fmt.Sprintf("Failed to parse PR URL: %v", err))
+				return
+			}
+			ui.Success(fmt.Sprintf("Parsed: %s/%s PR #%d", owner, repo, prNumber))
+		} else {
+			// 尝试作为 PR 号解析
+			prNumber, err = strconv.Atoi(arg)
+			if err != nil {
+				ui.Error(fmt.Sprintf("Invalid PR number or URL: %s", arg))
+				ui.Info("Expected: PR number (e.g., '123') or GitHub URL (e.g., 'https://github.com/owner/repo/pull/123')")
+				return
+			}
+			
+			// PR 号格式，需要从本地仓库获取 owner/repo
+			if !git.IsGitRepository() {
+				ui.Error("Not a git repository. When using PR number, you must be in a git repository.")
+				ui.Info("Alternatively, use the full GitHub PR URL: https://github.com/owner/repo/pull/NUMBER")
+				return
+			}
+			
+			remoteURL, err := git.GetRemoteURL()
+			if err != nil {
+				ui.Error(fmt.Sprintf("Failed to get remote URL: %v", err))
+				return
+			}
+			
+			owner, repo, err = github.ParseRepositoryFromURL(remoteURL)
+			if err != nil {
+				ui.Error(fmt.Sprintf("Failed to parse repository: %v", err))
+				return
+			}
+		}
+	} else {
+		// 没有提供参数，使用原有的自动检测逻辑
+		// 检查是否在 Git 仓库中
+		if !git.IsGitRepository() {
+			ui.Error("Not a git repository")
+			return
+		}
 
-	owner, repo, err := github.ParseRepositoryFromURL(remoteURL)
-	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to parse repository: %v", err))
-		return
+		// 获取仓库信息
+		remoteURL, err := git.GetRemoteURL()
+		if err != nil {
+			ui.Error(fmt.Sprintf("Failed to get remote URL: %v", err))
+			return
+		}
+
+		owner, repo, err = github.ParseRepositoryFromURL(remoteURL)
+		if err != nil {
+			ui.Error(fmt.Sprintf("Failed to parse repository: %v", err))
+			return
+		}
 	}
 
 	// 创建 GitHub 客户端
@@ -53,15 +111,8 @@ func runPRMerge(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	// 获取 PR 号
-	var prNumber int
-	if len(args) > 0 {
-		prNumber, err = strconv.Atoi(args[0])
-		if err != nil {
-			ui.Error(fmt.Sprintf("Invalid PR number: %s", args[0]))
-			return
-		}
-	} else {
+	// 如果还没有 PR 号，尝试自动检测或让用户选择
+	if prNumber == 0 {
 		// 尝试获取当前分支的 PR
 		currentBranch, err := git.GetCurrentBranch()
 		if err == nil && currentBranch != "" {

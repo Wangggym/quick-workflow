@@ -166,19 +166,81 @@ qkflow pr create
 # Merge PR by number
 qkflow pr merge 123
 
-# Interactive mode
+# Merge PR by URL (works from anywhere!)
+qkflow pr merge https://github.com/brain/planning-api/pull/2001
+
+# Interactive mode (auto-detect from current branch)
 qkflow pr merge
 ```
 
 **What it does:**
-1. ✅ Fetches PR details
-2. ✅ Confirms merge with you
-3. ✅ Merges the PR on GitHub
-4. ✅ Deletes remote branch (optional)
-5. ✅ Switches to main branch
-6. ✅ Deletes local branch (optional)
-7. ✅ Updates Jira status (optional)
-8. ✅ Adds merge comment to Jira
+1. ✅ Supports PR number OR full GitHub URL
+2. ✅ Fetches PR details
+3. ✅ Confirms merge with you
+4. ✅ Merges the PR on GitHub
+5. ✅ Deletes remote branch (optional)
+6. ✅ Switches to main branch
+7. ✅ Deletes local branch (optional)
+8. ✅ Updates Jira status (optional)
+9. ✅ Adds merge comment to Jira
+
+### Approve a Pull Request
+
+```bash
+# Approve PR by number (with default 👍 comment)
+qkflow pr approve 123
+
+# Approve PR by URL (works from anywhere!)
+qkflow pr approve https://github.com/brain/planning-api/pull/2001
+
+# URL also works with /files, /commits, /checks suffixes
+qkflow pr approve https://github.com/brain/planning-api/pull/2001/files
+
+# Custom comment
+qkflow pr approve 123 --comment "LGTM! 🎉"
+qkflow pr approve 123 -c "Looks good!"
+
+# Approve and auto-merge (with default 👍 comment)
+qkflow pr approve 123 --merge
+qkflow pr approve 123 -m
+
+# Approve by URL with custom comment and merge
+qkflow pr approve https://github.com/owner/repo/pull/456 -c "Ship it! 🚀" -m
+
+# Interactive mode (auto-detect PR from current branch)
+qkflow pr approve
+```
+
+**What it does:**
+1. ✅ Supports PR number OR full GitHub URL (including /files, /commits, /checks paths)
+2. ✅ Auto-detects PR from current branch (if no argument provided)
+3. ✅ Fetches PR details
+4. ✅ Approves the PR on GitHub
+5. ✅ Adds a comment (default: 👍, customize with -c flag)
+6. ✅ Optionally auto-merges after approval (with --merge flag)
+7. ✅ Checks if PR is mergeable before merging
+8. ✅ Cleans up branches after merge (if merged)
+
+**Examples:**
+```bash
+# Simple approve (uses default 👍 comment)
+qkflow pr approve 123
+
+# Approve from Files tab URL
+qkflow pr approve https://github.com/brain/planning-api/pull/2001/files
+
+# Custom comment
+qkflow pr approve 123 -c "LGTM!"
+
+# Approve PR from another repo by URL
+qkflow pr approve https://github.com/brain/planning-api/pull/2001
+
+# Approve and merge in one command (with 👍)
+qkflow pr approve 123 --merge
+
+# Approve current branch's PR
+qkflow pr approve  # Will find PR automatically
+```
 
 ### Quick Update (qkupdate)
 

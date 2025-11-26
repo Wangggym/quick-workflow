@@ -13,5 +13,6 @@ var prCmd = &cobra.Command{
 func init() {
 	prCmd.AddCommand(prCreateCmd)
 	prCmd.AddCommand(prMergeCmd)
+	prCmd.AddCommand(prApproveCmd)
 }
 
