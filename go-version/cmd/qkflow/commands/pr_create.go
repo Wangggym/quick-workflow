@@ -13,7 +13,7 @@ import (
 	"github.com/Wangggym/quick-workflow/internal/jira"
 	"github.com/Wangggym/quick-workflow/internal/ui"
 	"github.com/Wangggym/quick-workflow/internal/watcher"
-	"github.com/Wangggym/quick-workflow/pkg/config"
+	"github.com/Wangggym/quick-workflow/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -124,7 +124,7 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 		if len(selectedTypes) > 0 {
 			prType = ui.ExtractPRType(selectedTypes[0])
 		}
-		
+
 		// 使用 AI 生成简洁的 PR 标题
 		aiClient, err := ai.NewClient()
 		if err == nil && prType != "" {
@@ -188,7 +188,7 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 		// 无 Jira ticket 时，添加 # 前缀
 		commitMessage = fmt.Sprintf("# %s", title)
 	}
-	
+
 	ui.Info("Committing changes...")
 	if err := git.Commit(commitMessage); err != nil {
 		ui.Error(fmt.Sprintf("Failed to commit: %v", err))
@@ -249,7 +249,7 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 	// 处理编辑器内容（上传文件并添加评论）
 	if editorResult != nil && (editorResult.Content != "" || len(editorResult.Files) > 0) {
 		ui.Info("Processing description and files...")
-		
+
 		// 创建 Jira 客户端（如果需要）
 		var jiraClient *jira.Client
 		if jiraTicket != "" && jira.ValidateIssueKey(jiraTicket) {
@@ -339,7 +339,7 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 
 			// 更新状态
 				projectKey := jira.ExtractProjectKey(jiraTicket)
-			
+
 			// 检查状态缓存
 			statusCache, err := jira.NewStatusCache()
 			if err != nil {
@@ -363,7 +363,7 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 						}
 					}
 				}
-				
+
 				// 使用缓存的状态更新
 				if mapping != nil && mapping.PRCreatedStatus != "" {
 					ui.Info(fmt.Sprintf("Updating Jira status to: %s", mapping.PRCreatedStatus))
@@ -407,10 +407,10 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 
 	// 复制 URL 到剪贴板
 	copyToClipboard(pr.HTMLURL)
-	
+
 	// 打开浏览器
 	openBrowser(pr.HTMLURL)
-	
+
 	fmt.Println()
 	ui.Success("All done! 🎉")
 }
@@ -484,13 +484,13 @@ func generateSimpleTitle(jiraSummary, prType, description string) string {
 		}
 		return description
 	}
-	
+
 	// 否则使用 Jira 标题的前 50 个字符
 	summary := jiraSummary
 	if len(summary) > 50 {
 		summary = summary[:50] + "..."
 	}
-	
+
 	if prType != "" {
 		return fmt.Sprintf("%s: %s", prType, summary)
 	}

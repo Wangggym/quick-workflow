@@ -1,10 +1,14 @@
-# 自动更新功能
+# 自动更新功能指南
 
-## 概述
+> 本文档说明 qkflow 的自动更新功能，包括配置、使用方法和常见问题。
+
+---
+
+## 📋 概述
 
 qkflow 内置了智能的自动更新功能，可以确保你始终使用最新版本，享受最新特性和 bug 修复。
 
-## 特性
+## ✨ 特性
 
 - ✅ **自动检查更新** - 每24小时自动检查一次新版本
 - ✅ **后台静默运行** - 不影响当前命令的执行
@@ -13,7 +17,7 @@ qkflow 内置了智能的自动更新功能，可以确保你始终使用最新�
 - ✅ **手动更新** - 随时可以手动触发更新
 - ✅ **安全备份** - 更新失败时自动恢复旧版本
 
-## 工作原理
+## 🔄 工作原理
 
 ### 1. 自动检查
 
@@ -48,7 +52,7 @@ qkflow 内置了智能的自动更新功能，可以确保你始终使用最新�
 Run 'qkflow update-cli' to update, or visit: https://github.com/Wangggym/quick-workflow/releases
 ```
 
-## 配置自动更新
+## ⚙️ 配置自动更新
 
 ### 初始化时配置
 
@@ -87,7 +91,7 @@ export AUTO_UPDATE=true
 qkflow pr create
 ```
 
-## 手动更新
+## 🔄 手动更新
 
 随时可以手动检查并更新到最新版本：
 
@@ -112,7 +116,7 @@ qkflow update-cli
 ✅ You are already running the latest version (v1.0.0)
 ```
 
-## 更新频率
+## ⏰ 更新频率
 
 - **检查频率**: 每 24 小时检查一次
 - **时间戳文件**: `~/.qkflow/.last_update_check`
@@ -124,7 +128,7 @@ qkflow update-cli
 rm ~/.qkflow/.last_update_check
 ```
 
-## 支持的平台
+## 🌍 支持的平台
 
 自动更新支持所有 qkflow 支持的平台：
 
@@ -133,7 +137,7 @@ rm ~/.qkflow/.last_update_check
 - ✅ Linux (amd64) - `qkflow-linux-amd64`
 - ✅ Windows (amd64) - `qkflow-windows-amd64.exe`
 
-## 安全性
+## 🔒 安全性
 
 ### 下载来源
 
@@ -157,7 +161,7 @@ rm ~/.qkflow/.last_update_check
 - 如果安装在 `/usr/local/bin/`，需要 sudo 权限
 - 如果安装在 `~/bin/` 或 `GOPATH/bin`，不需要特殊权限
 
-## 常见问题
+## ❓ 常见问题
 
 ### Q: 自动更新会中断我的工作吗？
 
@@ -195,7 +199,7 @@ export AUTO_UPDATE=false
 
 A: 不会。为了不影响用户体验，更新失败时静默处理。可以手动运行 `qkflow update-cli` 查看详细错误。
 
-## 最佳实践
+## 💡 最佳实践
 
 1. **推荐启用自动更新** - 确保始终使用最新版本，享受最新特性和 bug 修复
 
@@ -215,20 +219,19 @@ A: 不会。为了不影响用户体验，更新失败时静默处理。可以�
    export AUTO_UPDATE=false
    ```
 
-## 更新日志
+## 📚 相关文档
 
-查看完整的更新历史和版本说明：
+- [快速开始指南](../QUICKSTART.md) - 5 分钟快速上手
+- [PR 使用指南](./PR_GUIDELINES.md) - PR 功能完整使用指南
+- [Jira 使用指南](./JIRA_GUIDELINES.md) - Jira 功能完整使用指南
 
-👉 [GitHub Releases](https://github.com/Wangggym/quick-workflow/releases)
+## 🔗 相关资源
 
-## 反馈
-
-如果在使用自动更新功能时遇到问题，请：
-
+- 📦 [GitHub Releases](https://github.com/Wangggym/quick-workflow/releases) - 查看更新历史和版本说明
 - 🐛 [报告 Bug](https://github.com/Wangggym/quick-workflow/issues/new?labels=bug)
 - 💡 [提出建议](https://github.com/Wangggym/quick-workflow/issues/new?labels=enhancement)
 
 ---
 
-**享受无缝的自动更新体验！** 🚀
+**最后更新**：2025-12-05
 

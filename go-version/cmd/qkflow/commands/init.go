@@ -7,7 +7,7 @@ import (
 
 	"github.com/Wangggym/quick-workflow/internal/ui"
 	"github.com/Wangggym/quick-workflow/internal/utils"
-	"github.com/Wangggym/quick-workflow/pkg/config"
+	"github.com/Wangggym/quick-workflow/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -119,7 +119,7 @@ func runInit(cmd *cobra.Command, args []string) {
 
 	ui.Success("Configuration saved successfully!")
 	fmt.Println()
-	
+
 	// Show storage location
 	location := utils.GetConfigLocation()
 	configDir, _ := utils.GetQuickWorkflowConfigDir()
@@ -128,7 +128,7 @@ func runInit(cmd *cobra.Command, args []string) {
 		fmt.Printf("  📁 Config: %s/config.yaml\n", configDir)
 	}
 	fmt.Println()
-	
+
 	ui.Info("You can now use the following commands:")
 	fmt.Println("  qkflow pr create   - Create a PR and update Jira")
 	fmt.Println("  qkflow pr merge    - Merge a PR and update Jira")

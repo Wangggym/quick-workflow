@@ -46,7 +46,7 @@ func Load() (*Config, error) {
 	// 环境变量前缀和绑定
 	viper.SetEnvPrefix("QK")
 	viper.AutomaticEnv()
-	
+
 	// 绑定环境变量（支持常用的环境变量名）
 	viper.BindEnv("github_token", "GITHUB_TOKEN", "GH_TOKEN")
 	viper.BindEnv("github_owner", "GITHUB_OWNER")

@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/Wangggym/quick-workflow/internal/ui"
-	"github.com/Wangggym/quick-workflow/pkg/config"
+	"github.com/Wangggym/quick-workflow/internal/config"
 )
 
 const (

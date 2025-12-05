@@ -12,7 +12,7 @@ import (
 	"github.com/Wangggym/quick-workflow/internal/ui"
 	"github.com/Wangggym/quick-workflow/internal/utils"
 	"github.com/Wangggym/quick-workflow/internal/watcher"
-	"github.com/Wangggym/quick-workflow/pkg/config"
+	"github.com/Wangggym/quick-workflow/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -110,7 +110,7 @@ func init() {
 	watchLogCmd.Flags().BoolVar(&followLog, "follow", false, "Follow log output (like tail -f)")
 	watchLogCmd.Flags().IntVar(&logLines, "last", 50, "Show last N lines")
 	watchHistoryCmd.Flags().IntVar(&historyDays, "days", 7, "Show history for last N days")
-	
+
 	watchCmd.AddCommand(watchCheckCmd)
 	watchCmd.AddCommand(watchStartCmd)
 	watchCmd.AddCommand(watchStopCmd)
@@ -441,21 +441,21 @@ func runWatchStatus(cmd *cobra.Command, args []string) {
 
 	// Check if running
 	running, pid, _ := watcher.IsRunning()
-	
+
 	if running {
 		uptime := time.Since(state.DaemonStartTime)
 		fmt.Printf("Status: Running ✅\n")
 		fmt.Printf("PID: %d\n", pid)
-		fmt.Printf("Started: %s (uptime: %s)\n", 
+		fmt.Printf("Started: %s (uptime: %s)\n",
 			state.DaemonStartTime.Format("2006-01-02 15:04:05"),
 			formatDuration(uptime))
-		
+
 		if !state.LastCheckTime.IsZero() {
 			lastCheck := time.Since(state.LastCheckTime)
-			fmt.Printf("Last Check: %s (%s ago)\n", 
+			fmt.Printf("Last Check: %s (%s ago)\n",
 				state.LastCheckTime.Format("2006-01-02 15:04:05"),
 				formatDuration(lastCheck))
-			
+
 			// Calculate next check
 			scheduler := watcher.NewScheduler(nil)
 			nextCheck := scheduler.CalculateNextCheckTime(time.Now())
@@ -473,7 +473,7 @@ func runWatchStatus(cmd *cobra.Command, args []string) {
 	fmt.Println("📊 Statistics (last 7 days):")
 	recentPRs := state.GetRecentPRs(7)
 	fmt.Printf("  PRs Processed: %d\n", len(recentPRs))
-	
+
 	successCount := 0
 	for _, pr := range recentPRs {
 		for _, update := range pr.JiraUpdates {
@@ -498,7 +498,7 @@ func runWatchStatus(cmd *cobra.Command, args []string) {
 	fmt.Println()
 	fmt.Println("📝 Files:")
 	fmt.Printf("  Log: %s\n", logger.GetFilePath())
-	
+
 	if cfg != nil {
 		configDir, _ := utils.GetConfigDir()
 		if configDir != "" {
@@ -660,13 +660,13 @@ func runWatchUninstall(cmd *cobra.Command, args []string) {
 	running, pid, _ := watcher.IsRunning()
 	if running {
 		ui.Info(fmt.Sprintf("Stopping daemon (PID: %d)...", pid))
-		
+
 		process, err := os.FindProcess(pid)
 		if err == nil {
 			process.Signal(syscall.SIGTERM)
 			time.Sleep(time.Second)
 		}
-		
+
 		ui.Info("  ✓ Daemon stopped")
 	}
 
@@ -676,7 +676,7 @@ func runWatchUninstall(cmd *cobra.Command, args []string) {
 		ui.Error(fmt.Sprintf("✗ Failed to uninstall launch agent: %v", err))
 		return
 	}
-	
+
 	plistPath, _ := watcher.GetLaunchAgentPath()
 	ui.Info("  ✓ Removed launch agent")
 	if plistPath != "" {
@@ -687,12 +687,12 @@ func runWatchUninstall(cmd *cobra.Command, args []string) {
 	ui.Success("✅ Watch daemon completely uninstalled")
 	fmt.Println()
 	fmt.Println("The daemon will NOT start automatically anymore.")
-	
+
 	configDir, _ := utils.GetConfigDir()
 	if configDir != "" {
 		fmt.Println("Logs and history are preserved at ~/.qkflow/")
 	}
-	
+
 	fmt.Println()
 	fmt.Println("💡 To re-enable later, use 'qkflow watch install'")
 }

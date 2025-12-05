@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Wangggym/quick-workflow/pkg/config"
+	"github.com/Wangggym/quick-workflow/internal/config"
 	"github.com/google/go-github/v57/github"
 	"golang.org/x/oauth2"
 )
@@ -238,10 +238,10 @@ func ParsePRFromURL(url string) (owner, repo string, prNumber int, err error) {
 
 	owner = parts[0]
 	repo = parts[1]
-	
+
 	// 解析 PR 号（parts[3] 可能后面还有 /files, /commits 等）
 	prStr := parts[3]
-	
+
 	prNumber, err = strconv.Atoi(prStr)
 	if err != nil {
 		return "", "", 0, fmt.Errorf("invalid PR number in URL: %s", prStr)

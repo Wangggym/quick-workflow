@@ -10,7 +10,7 @@ import (
 
 	"github.com/Wangggym/quick-workflow/internal/github"
 	"github.com/Wangggym/quick-workflow/internal/jira"
-	"github.com/Wangggym/quick-workflow/pkg/config"
+	"github.com/Wangggym/quick-workflow/internal/config"
 )
 
 // Daemon represents the watch daemon
@@ -105,7 +105,7 @@ func NewDaemon(cfg *config.Config, scheduleConf *ScheduleConfig) (*Daemon, error
 func (d *Daemon) Start() error {
 	d.logger.Info("Watch daemon starting...")
 	d.logger.Infof("Watching %d PRs", d.watchingList.Count())
-	d.logger.Infof("Schedule: every %d minutes (daytime), checks at %v (night)", 
+	d.logger.Infof("Schedule: every %d minutes (daytime), checks at %v (night)",
 		d.scheduleConf.DaytimeInterval, d.scheduleConf.NightChecks)
 
 	// Save daemon PID
@@ -144,7 +144,7 @@ func (d *Daemon) Start() error {
 func (d *Daemon) Stop() error {
 	d.logger.Info("Stopping watch daemon...")
 	d.cancel()
-	
+
 	// Clear daemon PID
 	if err := d.state.ClearDaemonInfo(); err != nil {
 		d.logger.Warningf("Failed to clear daemon PID: %v", err)
@@ -171,8 +171,8 @@ func (d *Daemon) mainLoop() {
 			// Calculate next check time
 			now := time.Now()
 			nextCheck := d.scheduler.CalculateNextCheckTime(now)
-			d.logger.Infof("Next check at: %s (%s)", 
-				nextCheck.Format("2006-01-02 15:04:05"), 
+			d.logger.Infof("Next check at: %s (%s)",
+				nextCheck.Format("2006-01-02 15:04:05"),
 				d.scheduler.FormatNextCheckTime(nextCheck))
 
 			// Sleep until next check

@@ -6,7 +6,7 @@ import (
 	"github.com/Wangggym/quick-workflow/internal/ui"
 	"github.com/Wangggym/quick-workflow/internal/updater"
 	"github.com/Wangggym/quick-workflow/internal/utils"
-	"github.com/Wangggym/quick-workflow/pkg/config"
+	"github.com/Wangggym/quick-workflow/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -93,7 +93,7 @@ var configCmd = &cobra.Command{
 
 		fmt.Println("Current configuration:")
 		fmt.Println()
-		
+
 		// Show storage location
 		location := utils.GetConfigLocation()
 		configDir, _ := utils.GetQuickWorkflowConfigDir()
@@ -106,14 +106,14 @@ var configCmd = &cobra.Command{
 		if jiraDir != "" {
 			fmt.Printf("  Jira Status: %s/jira-status.json\n", jiraDir)
 		}
-		
+
 		fmt.Println()
 		fmt.Println("📧 Basic:")
 		fmt.Printf("  Email: %s\n", cfg.Email)
 		if cfg.BranchPrefix != "" {
 			fmt.Printf("  Branch Prefix: %s\n", cfg.BranchPrefix)
 		}
-		
+
 		fmt.Println()
 		fmt.Println("🐙 GitHub:")
 		fmt.Printf("  Token: %s\n", maskToken(cfg.GitHubToken))
@@ -123,12 +123,12 @@ var configCmd = &cobra.Command{
 		if cfg.GitHubRepo != "" {
 			fmt.Printf("  Repo: %s\n", cfg.GitHubRepo)
 		}
-		
+
 		fmt.Println()
 		fmt.Println("📋 Jira:")
 		fmt.Printf("  Service: %s\n", cfg.JiraServiceAddress)
 		fmt.Printf("  API Token: %s\n", maskToken(cfg.JiraAPIToken))
-		
+
 		fmt.Println()
 		fmt.Println("🔄 Auto Update:")
 		if cfg.AutoUpdate {
@@ -136,20 +136,20 @@ var configCmd = &cobra.Command{
 		} else {
 			fmt.Printf("  Status: ❌ Disabled (run 'qkflow update-cli' to update manually)\n")
 		}
-		
+
 		fmt.Println()
 		fmt.Println("🤖 AI (optional):")
-		
+
 		// Determine which AI service is active
 		hasDeepSeek := cfg.DeepSeekKey != ""
 		hasOpenAI := cfg.OpenAIKey != ""
-		
+
 		if hasDeepSeek {
 			fmt.Printf("  DeepSeek Key: %s ✅ (Active)\n", maskToken(cfg.DeepSeekKey))
 		} else {
 			fmt.Printf("  DeepSeek Key: not configured\n")
 		}
-		
+
 		if hasOpenAI {
 			if hasDeepSeek {
 				fmt.Printf("  OpenAI Key: %s ✅ (Backup)\n", maskToken(cfg.OpenAIKey))
@@ -159,11 +159,11 @@ var configCmd = &cobra.Command{
 		} else {
 			fmt.Printf("  OpenAI Key: not configured\n")
 		}
-		
+
 		if cfg.OpenAIProxyURL != "" {
 			fmt.Printf("  OpenAI Proxy URL: %s\n", cfg.OpenAIProxyURL)
 		}
-		
+
 		if !hasDeepSeek && !hasOpenAI {
 			fmt.Println()
 			fmt.Println("  💡 Tip: Configure AI for automatic PR title/description generation")
