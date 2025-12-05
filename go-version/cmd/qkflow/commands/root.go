@@ -1,14 +1,24 @@
 package commands
 
 import (
-	"fmt"
-
-	"github.com/Wangggym/quick-workflow/internal/ui"
+	"github.com/Wangggym/quick-workflow/internal/config"
+	"github.com/Wangggym/quick-workflow/internal/logger"
 	"github.com/Wangggym/quick-workflow/internal/updater"
 	"github.com/Wangggym/quick-workflow/internal/utils"
-	"github.com/Wangggym/quick-workflow/internal/config"
 	"github.com/spf13/cobra"
 )
+
+// Global logger instance for all commands
+var log *logger.Logger
+
+func init() {
+	// Initialize global logger for commands
+	// Level will be automatically loaded from environment variable or default value
+	log, _ = logger.NewLogger(&logger.LoggerOptions{
+		Type: logger.LoggerTypeUI,
+		// Level omitted - will use QKFLOW_LOG_LEVEL env var or default LevelInfo
+	})
+}
 
 var (
 	// Version is the application version
@@ -35,13 +45,13 @@ It automates common tasks like creating PRs, updating Jira status, and more.`,
 		// 检查配置
 		cfg, err := config.Load()
 		if err != nil {
-			ui.Error(fmt.Sprintf("Failed to load config: %v", err))
-			ui.Warning("Please run 'qkflow init' to configure the tool")
+			log.Error("Failed to load config: %v", err)
+			log.Warning("Please run 'qkflow init' to configure the tool")
 			return
 		}
 
 		if !config.IsConfigured() {
-			ui.Warning("Configuration incomplete. Please run 'qkflow init' to complete setup")
+			log.Warning("Configuration incomplete. Please run 'qkflow init' to complete setup")
 		}
 
 		// 检查更新（后台静默执行，不阻塞主流程）
@@ -77,7 +87,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("qkflow version %s (built: %s)\n", Version, BuildTime)
+		log.Info("qkflow version %s (built: %s)", Version, BuildTime)
 	},
 }
 
@@ -87,86 +97,86 @@ var configCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.Get()
 		if cfg == nil {
-			ui.Error("No configuration found. Run 'qkflow init' first.")
+			log.Error("No configuration found. Run 'qkflow init' first.")
 			return
 		}
 
-		fmt.Println("Current configuration:")
-		fmt.Println()
+		log.Info("Current configuration:")
+		log.Info("")
 
 		// Show storage location
 		location := utils.GetConfigLocation()
 		configDir, _ := utils.GetQuickWorkflowConfigDir()
 		jiraDir, _ := utils.GetConfigDir()
-		fmt.Println("💾 Storage:")
-		fmt.Printf("  Location: %s\n", location)
+		log.Info("💾 Storage:")
+		log.Info("  Location: %s", location)
 		if configDir != "" {
-			fmt.Printf("  Config: %s/config.yaml\n", configDir)
+			log.Info("  Config: %s/config.yaml", configDir)
 		}
 		if jiraDir != "" {
-			fmt.Printf("  Jira Status: %s/jira-status.json\n", jiraDir)
+			log.Info("  Jira Status: %s/jira-status.json", jiraDir)
 		}
 
-		fmt.Println()
-		fmt.Println("📧 Basic:")
-		fmt.Printf("  Email: %s\n", cfg.Email)
+		log.Info("")
+		log.Info("📧 Basic:")
+		log.Info("  Email: %s", cfg.Email)
 		if cfg.BranchPrefix != "" {
-			fmt.Printf("  Branch Prefix: %s\n", cfg.BranchPrefix)
+			log.Info("  Branch Prefix: %s", cfg.BranchPrefix)
 		}
 
-		fmt.Println()
-		fmt.Println("🐙 GitHub:")
-		fmt.Printf("  Token: %s\n", maskToken(cfg.GitHubToken))
+		log.Info("")
+		log.Info("🐙 GitHub:")
+		log.Info("  Token: %s", maskToken(cfg.GitHubToken))
 		if cfg.GitHubOwner != "" {
-			fmt.Printf("  Owner: %s\n", cfg.GitHubOwner)
+			log.Info("  Owner: %s", cfg.GitHubOwner)
 		}
 		if cfg.GitHubRepo != "" {
-			fmt.Printf("  Repo: %s\n", cfg.GitHubRepo)
+			log.Info("  Repo: %s", cfg.GitHubRepo)
 		}
 
-		fmt.Println()
-		fmt.Println("📋 Jira:")
-		fmt.Printf("  Service: %s\n", cfg.JiraServiceAddress)
-		fmt.Printf("  API Token: %s\n", maskToken(cfg.JiraAPIToken))
+		log.Info("")
+		log.Info("📋 Jira:")
+		log.Info("  Service: %s", cfg.JiraServiceAddress)
+		log.Info("  API Token: %s", maskToken(cfg.JiraAPIToken))
 
-		fmt.Println()
-		fmt.Println("🔄 Auto Update:")
+		log.Info("")
+		log.Info("🔄 Auto Update:")
 		if cfg.AutoUpdate {
-			fmt.Printf("  Status: ✅ Enabled (checks every 24h)\n")
+			log.Info("  Status: ✅ Enabled (checks every 24h)")
 		} else {
-			fmt.Printf("  Status: ❌ Disabled (run 'qkflow update-cli' to update manually)\n")
+			log.Info("  Status: ❌ Disabled (run 'qkflow update-cli' to update manually)")
 		}
 
-		fmt.Println()
-		fmt.Println("🤖 AI (optional):")
+		log.Info("")
+		log.Info("🤖 AI (optional):")
 
 		// Determine which AI service is active
 		hasDeepSeek := cfg.DeepSeekKey != ""
 		hasOpenAI := cfg.OpenAIKey != ""
 
 		if hasDeepSeek {
-			fmt.Printf("  DeepSeek Key: %s ✅ (Active)\n", maskToken(cfg.DeepSeekKey))
+			log.Info("  DeepSeek Key: %s ✅ (Active)", maskToken(cfg.DeepSeekKey))
 		} else {
-			fmt.Printf("  DeepSeek Key: not configured\n")
+			log.Info("  DeepSeek Key: not configured")
 		}
 
 		if hasOpenAI {
 			if hasDeepSeek {
-				fmt.Printf("  OpenAI Key: %s ✅ (Backup)\n", maskToken(cfg.OpenAIKey))
+				log.Info("  OpenAI Key: %s ✅ (Backup)", maskToken(cfg.OpenAIKey))
 			} else {
-				fmt.Printf("  OpenAI Key: %s ✅ (Active)\n", maskToken(cfg.OpenAIKey))
+				log.Info("  OpenAI Key: %s ✅ (Active)", maskToken(cfg.OpenAIKey))
 			}
 		} else {
-			fmt.Printf("  OpenAI Key: not configured\n")
+			log.Info("  OpenAI Key: not configured")
 		}
 
 		if cfg.OpenAIProxyURL != "" {
-			fmt.Printf("  OpenAI Proxy URL: %s\n", cfg.OpenAIProxyURL)
+			log.Info("  OpenAI Proxy URL: %s", cfg.OpenAIProxyURL)
 		}
 
 		if !hasDeepSeek && !hasOpenAI {
-			fmt.Println()
-			fmt.Println("  💡 Tip: Configure AI for automatic PR title/description generation")
+			log.Info("")
+			log.Info("  💡 Tip: Configure AI for automatic PR title/description generation")
 		}
 	},
 }
@@ -177,4 +187,3 @@ func maskToken(token string) string {
 	}
 	return token[:4] + "****" + token[len(token)-4:]
 }
-

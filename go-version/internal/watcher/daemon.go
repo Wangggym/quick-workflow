@@ -8,9 +8,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Wangggym/quick-workflow/internal/config"
 	"github.com/Wangggym/quick-workflow/internal/github"
 	"github.com/Wangggym/quick-workflow/internal/jira"
-	"github.com/Wangggym/quick-workflow/internal/config"
+	"github.com/Wangggym/quick-workflow/internal/logger"
 )
 
 // Daemon represents the watch daemon
@@ -24,7 +25,7 @@ type Daemon struct {
 	processor    *Processor
 	scheduler    *Scheduler
 	state        *State
-	logger       *Logger
+	logger       *logger.Logger
 	watchingList *WatchingList
 	ctx          context.Context
 	cancel       context.CancelFunc
@@ -55,7 +56,12 @@ func NewDaemon(cfg *config.Config, scheduleConf *ScheduleConfig) (*Daemon, error
 	}
 
 	// Create logger
-	logger, err := NewLogger()
+	// Level will be automatically loaded from environment variable or default value
+	watcherLogger, err := logger.NewLogger(&logger.LoggerOptions{
+		Type:     logger.LoggerTypeFile,
+		FileName: "watch.log",
+		// Level omitted - will use QKFLOW_LOG_LEVEL env var or default LevelInfo
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create logger: %w", err)
 	}
@@ -73,8 +79,8 @@ func NewDaemon(cfg *config.Config, scheduleConf *ScheduleConfig) (*Daemon, error
 	}
 
 	// Create checker and processor
-	checker := NewChecker(ghClient, logger)
-	processor := NewProcessor(jiraClient, statusCache, logger)
+	checker := NewChecker(ghClient, watcherLogger)
+	processor := NewProcessor(jiraClient, statusCache, watcherLogger)
 
 	// Create scheduler
 	if scheduleConf == nil {
@@ -94,7 +100,7 @@ func NewDaemon(cfg *config.Config, scheduleConf *ScheduleConfig) (*Daemon, error
 		processor:    processor,
 		scheduler:    scheduler,
 		state:        state,
-		logger:       logger,
+		logger:       watcherLogger,
 		watchingList: watchingList,
 		ctx:          ctx,
 		cancel:       cancel,
@@ -104,13 +110,13 @@ func NewDaemon(cfg *config.Config, scheduleConf *ScheduleConfig) (*Daemon, error
 // Start starts the daemon
 func (d *Daemon) Start() error {
 	d.logger.Info("Watch daemon starting...")
-	d.logger.Infof("Watching %d PRs", d.watchingList.Count())
-	d.logger.Infof("Schedule: every %d minutes (daytime), checks at %v (night)",
+	d.logger.Info("Watching %d PRs", d.watchingList.Count())
+	d.logger.Info("Schedule: every %d minutes (daytime), checks at %v (night)",
 		d.scheduleConf.DaytimeInterval, d.scheduleConf.NightChecks)
 
 	// Save daemon PID
 	if err := d.state.SetDaemonInfo(os.Getpid()); err != nil {
-		d.logger.Warningf("Failed to save daemon PID: %v", err)
+		d.logger.Warning("Failed to save daemon PID: %v", err)
 	}
 
 	// Setup signal handling
@@ -131,7 +137,7 @@ func (d *Daemon) Start() error {
 			case syscall.SIGHUP:
 				d.logger.Info("Received SIGHUP, reloading configuration...")
 				if err := d.reloadConfig(); err != nil {
-					d.logger.Errorf("Failed to reload config: %v", err)
+					d.logger.Error("Failed to reload config: %v", err)
 				}
 			}
 		case <-d.ctx.Done():
@@ -147,7 +153,7 @@ func (d *Daemon) Stop() error {
 
 	// Clear daemon PID
 	if err := d.state.ClearDaemonInfo(); err != nil {
-		d.logger.Warningf("Failed to clear daemon PID: %v", err)
+		d.logger.Warning("Failed to clear daemon PID: %v", err)
 	}
 
 	// Close logger
@@ -171,7 +177,7 @@ func (d *Daemon) mainLoop() {
 			// Calculate next check time
 			now := time.Now()
 			nextCheck := d.scheduler.CalculateNextCheckTime(now)
-			d.logger.Infof("Next check at: %s (%s)",
+			d.logger.Info("Next check at: %s (%s)",
 				nextCheck.Format("2006-01-02 15:04:05"),
 				d.scheduler.FormatNextCheckTime(nextCheck))
 
@@ -188,12 +194,12 @@ func (d *Daemon) mainLoop() {
 
 // performCheck performs a PR check
 func (d *Daemon) performCheck() {
-	d.logger.Infof("Checking %d watching PRs", d.watchingList.Count())
+	d.logger.Info("Checking %d watching PRs", d.watchingList.Count())
 
 	// Check for merged PRs from watching list
 	mergedPRs, err := d.checker.CheckMergedPRs(d.watchingList, d.state)
 	if err != nil {
-		d.logger.Errorf("Failed to check PRs: %v", err)
+		d.logger.Error("Failed to check PRs: %v", err)
 		d.state.UpdateLastCheckTime()
 		return
 	}
@@ -204,11 +210,11 @@ func (d *Daemon) performCheck() {
 		return
 	}
 
-	d.logger.Infof("Found %d newly merged PR(s)", len(mergedPRs))
+	d.logger.Info("Found %d newly merged PR(s)", len(mergedPRs))
 
 	// Process each PR
 	if err := d.processor.ProcessBatch(mergedPRs, d.state, d.watchingList); err != nil {
-		d.logger.Errorf("Failed to process PRs: %v", err)
+		d.logger.Error("Failed to process PRs: %v", err)
 	}
 
 	// Update last check time
@@ -217,16 +223,14 @@ func (d *Daemon) performCheck() {
 	// Clean old records
 	retentionDays := 7 // Could be from config
 	if err := d.state.CleanOldRecords(retentionDays); err != nil {
-		d.logger.Warningf("Failed to clean old records: %v", err)
+		d.logger.Warning("Failed to clean old records: %v", err)
 	}
 
-	if err := d.logger.CleanOldLogs(retentionDays); err != nil {
-		d.logger.Warningf("Failed to clean old logs: %v", err)
-	}
+	// Note: Log cleanup is handled automatically by the logger, no manual cleanup needed
 
 	// Clean old watching PRs (older than 30 days)
 	if err := d.watchingList.Clean(30); err != nil {
-		d.logger.Warningf("Failed to clean old watching PRs: %v", err)
+		d.logger.Warning("Failed to clean old watching PRs: %v", err)
 	}
 }
 
@@ -268,4 +272,3 @@ func IsRunning() (bool, int, error) {
 
 	return true, state.DaemonPID, nil
 }
-

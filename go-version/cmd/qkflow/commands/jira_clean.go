@@ -53,7 +53,7 @@ Examples:
 		if !cleanAll {
 			issueKey := args[0]
 			if !jira.ValidateIssueKey(issueKey) {
-				ui.Error(fmt.Sprintf("Invalid issue key: %s", issueKey))
+				log.Error("Invalid issue key: %s", issueKey)
 				return
 			}
 			opts.IssueKey = issueKey
@@ -64,27 +64,27 @@ Examples:
 			// List all exports
 			exports, err := cleaner.ListExports()
 			if err != nil {
-				ui.Error(fmt.Sprintf("Failed to list exports: %v", err))
+				log.Error("Failed to list exports: %v", err)
 				return
 			}
 
 			if len(exports) == 0 {
-				fmt.Println("No exports found.")
+				log.Info("No exports found.")
 				return
 			}
 
-			fmt.Println("🗑️  The following will be deleted:")
+			log.Info("🗑️  The following will be deleted:")
 			totalSize := int64(0)
 			for _, exp := range exports {
-				fmt.Printf("  • %s (%s, %d files)\n", exp.IssueKey, formatSize(exp.Size), exp.FileCount)
+				log.Info("  • %s (%s, %d files)", exp.IssueKey, formatSize(exp.Size), exp.FileCount)
 				totalSize += exp.Size
 			}
-			fmt.Printf("\nTotal: %d exports, %s\n\n", len(exports), formatSize(totalSize))
+			log.Info("\nTotal: %d exports, %s\n", len(exports), formatSize(totalSize))
 
 			// Ask for confirmation
 			confirm, err := ui.PromptConfirm("Are you sure you want to delete all exports?", false)
 			if err != nil || !confirm {
-				fmt.Println("Cancelled.")
+				log.Info("Cancelled.")
 				return
 			}
 		} else if !cleanAll && !cleanForce && !cleanDryRun {
@@ -95,18 +95,18 @@ Examples:
 				DryRun:   true,
 			})
 			if err != nil {
-				ui.Error(fmt.Sprintf("Failed to check export: %v", err))
+				log.Error("Failed to check export: %v", err)
 				return
 			}
 
 			if len(testResult) > 0 && testResult[0].Error == nil {
 				r := testResult[0]
-				fmt.Printf("🗑️  The following will be deleted:\n")
-				fmt.Printf("   %s (%s, %d files)\n\n", r.IssueKey, formatSize(r.Size), r.FileCount)
+				log.Info("🗑️  The following will be deleted:")
+				log.Info("   %s (%s, %d files)", r.IssueKey, formatSize(r.Size), r.FileCount)
 
 				confirm, err := ui.PromptConfirm(fmt.Sprintf("Delete export for %s?", opts.IssueKey), false)
 				if err != nil || !confirm {
-					fmt.Println("Cancelled.")
+					log.Info("Cancelled.")
 					return
 				}
 			}
@@ -115,14 +115,14 @@ Examples:
 		// Perform cleaning
 		results, err := cleaner.Clean(opts)
 		if err != nil {
-			ui.Error(fmt.Sprintf("Failed to clean: %v", err))
+			log.Error("Failed to clean: %v", err)
 			return
 		}
 
 		// Display results
-		fmt.Println()
+		log.Info("")
 		if cleanDryRun {
-			fmt.Println("🔍 Dry run - no files were deleted:")
+			log.Info("🔍 Dry run - no files were deleted:")
 		}
 
 		totalSize := int64(0)
@@ -137,12 +137,12 @@ Examples:
 			}
 		}
 
-		fmt.Println()
+		log.Info("")
 		if cleanDryRun {
-			fmt.Printf("Would free: %s\n", formatSize(totalSize))
+			log.Info("Would free: %s", formatSize(totalSize))
 		} else {
 			if successCount > 0 {
-				ui.Success(fmt.Sprintf("Cleaned %d export(s), freed %s", successCount, formatSize(totalSize)))
+				log.Success("Cleaned %d export(s), freed %s", successCount, formatSize(totalSize))
 			}
 		}
 	},
@@ -167,4 +167,3 @@ func formatSize(bytes int64) string {
 	}
 	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
-

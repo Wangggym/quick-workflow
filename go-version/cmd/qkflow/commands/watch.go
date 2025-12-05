@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 	"time"
 
+	"github.com/Wangggym/quick-workflow/internal/config"
 	"github.com/Wangggym/quick-workflow/internal/github"
 	"github.com/Wangggym/quick-workflow/internal/jira"
-	"github.com/Wangggym/quick-workflow/internal/ui"
+	"github.com/Wangggym/quick-workflow/internal/logger"
 	"github.com/Wangggym/quick-workflow/internal/utils"
 	"github.com/Wangggym/quick-workflow/internal/watcher"
-	"github.com/Wangggym/quick-workflow/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -127,102 +128,107 @@ func init() {
 func runWatchCheck(cmd *cobra.Command, args []string) {
 	cfg := config.Get()
 	if cfg == nil {
-		ui.Error("Configuration not found. Please run 'qkflow init' first")
+		log.Error("Configuration not found. Please run 'qkflow init' first")
 		return
 	}
 
 	// Validate configuration
 	if cfg.GitHubToken == "" {
-		ui.Error("GitHub token not configured")
+		log.Error("GitHub token not configured")
 		return
 	}
 
 	if cfg.JiraServiceAddress == "" || cfg.Email == "" || cfg.JiraAPIToken == "" {
-		ui.Error("Jira not configured. Please run 'qkflow init' first")
+		log.Error("Jira not configured. Please run 'qkflow init' first")
 		return
 	}
 
 	// Get GitHub client
 	ghClient, err := github.NewClient()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to create GitHub client: %v", err))
+		log.Error("Failed to create GitHub client: %v", err)
 		return
 	}
 
 	if dryRun {
-		ui.Info("🔍 Dry-run mode: No Jira updates will be made")
-		fmt.Println()
+		log.Info("🔍 Dry-run mode: No Jira updates will be made")
+		log.Info("")
 	}
 
 	// Initialize components
-	logger, err := watcher.NewLogger()
+	// Level will be automatically loaded from environment variable or default value
+	watcherLogger, err := logger.NewLogger(&logger.LoggerOptions{
+		Type:     logger.LoggerTypeFile,
+		FileName: "watch.log",
+		// Level omitted - will use QKFLOW_LOG_LEVEL env var or default LevelInfo
+	})
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to create logger: %v", err))
+		log.Error("Failed to create logger: %v", err)
 		return
 	}
-	defer logger.Close()
+	defer watcherLogger.Close()
 
 	state, err := watcher.NewState()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to load state: %v", err))
+		log.Error("Failed to load state: %v", err)
 		return
 	}
 
 	watchingList, err := watcher.NewWatchingList()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to load watching list: %v", err))
+		log.Error("Failed to load watching list: %v", err)
 		return
 	}
 
-	ui.Info(fmt.Sprintf("Checking %d watching PRs...", watchingList.Count()))
-	fmt.Println()
+	log.Info("Checking %d watching PRs...", watchingList.Count())
+	log.Info("")
 
 	if watchingList.Count() == 0 {
-		ui.Info("No PRs in watching list")
-		ui.Info("PRs will be added automatically when you create them with 'qkflow pr create'")
+		log.Info("No PRs in watching list")
+		log.Info("PRs will be added automatically when you create them with 'qkflow pr create'")
 		return
 	}
 
 	jiraClient, err := jira.NewClient()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to create Jira client: %v", err))
+		log.Error("Failed to create Jira client: %v", err)
 		return
 	}
 
 	statusCache, err := jira.NewStatusCache()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to load Jira status cache: %v", err))
+		log.Error("Failed to load Jira status cache: %v", err)
 		return
 	}
 
 	// Create checker and processor
-	checker := watcher.NewChecker(ghClient, logger)
-	processor := watcher.NewProcessor(jiraClient, statusCache, logger)
+	checker := watcher.NewChecker(ghClient, watcherLogger)
+	processor := watcher.NewProcessor(jiraClient, statusCache, watcherLogger)
 
 	// Check for merged PRs from watching list
 	mergedPRs, err := checker.CheckMergedPRs(watchingList, state)
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to check PRs: %v", err))
-		logger.Errorf("Failed to check PRs: %v", err)
+		log.Error("Failed to check PRs: %v", err)
+		watcherLogger.Error("Failed to check PRs: %v", err)
 		return
 	}
 
 	if len(mergedPRs) == 0 {
-		ui.Success("✅ No newly merged PRs found")
-		logger.Info("No newly merged PRs found")
+		log.Success("✅ No newly merged PRs found")
+		watcherLogger.Info("No newly merged PRs found")
 		return
 	}
 
-	ui.Info(fmt.Sprintf("Found %d newly merged PR(s) with Jira tickets", len(mergedPRs)))
-	fmt.Println()
+	log.Info("Found %d newly merged PR(s) with Jira tickets", len(mergedPRs))
+	log.Info("")
 
 	// Process each PR
 	for _, pr := range mergedPRs {
-		ui.Info(fmt.Sprintf("📋 PR #%d: %s", pr.Number, pr.Title))
-		ui.Info(fmt.Sprintf("   Branch: %s", pr.Branch))
-		ui.Info(fmt.Sprintf("   Jira: %v", pr.JiraTickets))
-		ui.Info(fmt.Sprintf("   Merged: %s by %s", pr.MergedAt, pr.MergedBy))
-		fmt.Println()
+		log.Info("📋 PR #%d: %s", pr.Number, pr.Title)
+		log.Info("   Branch: %s", pr.Branch)
+		log.Info("   Jira: %v", pr.JiraTickets)
+		log.Info("   Merged: %s by %s", pr.MergedAt, pr.MergedBy)
+		log.Info("")
 
 		if dryRun {
 			// Dry-run: just log what would happen
@@ -230,13 +236,13 @@ func runWatchCheck(cmd *cobra.Command, args []string) {
 				projectKey := watcher.GetProjectFromTicket(ticket)
 				mapping, err := statusCache.GetProjectStatus(projectKey)
 				if err != nil || mapping == nil {
-					ui.Warning(fmt.Sprintf("   ⚠️  %s: No status mapping configured for project %s", ticket, projectKey))
+					log.Warning("   ⚠️  %s: No status mapping configured for project %s", ticket, projectKey)
 					continue
 				}
 
-				ui.Info(fmt.Sprintf("   Would update %s → %s", ticket, mapping.PRMergedStatus))
+				log.Info("   Would update %s → %s", ticket, mapping.PRMergedStatus)
 			}
-			fmt.Println()
+			log.Info("")
 			continue
 		}
 
@@ -246,26 +252,26 @@ func runWatchCheck(cmd *cobra.Command, args []string) {
 		// Display results
 		for _, update := range processedPR.JiraUpdates {
 			if update.Success {
-				ui.Success(fmt.Sprintf("   ✅ %s: %s → %s", update.Ticket, update.OldStatus, update.NewStatus))
+				log.Success("   ✅ %s: %s → %s", update.Ticket, update.OldStatus, update.NewStatus)
 			} else {
-				ui.Error(fmt.Sprintf("   ❌ %s: %s", update.Ticket, update.Error))
+				log.Error("   ❌ %s: %s", update.Ticket, update.Error)
 			}
 		}
 
-		fmt.Println()
+		log.Info("")
 
 		// Save to state
 		if err := state.AddProcessedPR(processedPR); err != nil {
-			ui.Warning(fmt.Sprintf("Failed to save processed PR to state: %v", err))
+			log.Warning("Failed to save processed PR to state: %v", err)
 		}
 
 		// Remove from watching list
 		for _, watchingPR := range watchingList.GetAll() {
 			if watchingPR.PRNumber == pr.Number {
 				if err := watchingList.Remove(watchingPR.Owner, watchingPR.Repo, pr.Number); err != nil {
-					logger.Warningf("Failed to remove PR #%d from watching list: %v", pr.Number, err)
+					watcherLogger.Warning("Failed to remove PR #%d from watching list: %v", pr.Number, err)
 				} else {
-					logger.Infof("Removed PR #%d from watching list", pr.Number)
+					watcherLogger.Info("Removed PR #%d from watching list", pr.Number)
 				}
 				break
 			}
@@ -274,26 +280,29 @@ func runWatchCheck(cmd *cobra.Command, args []string) {
 
 	// Update last check time
 	if err := state.UpdateLastCheckTime(); err != nil {
-		logger.Warningf("Failed to update last check time: %v", err)
+		watcherLogger.Warning("Failed to update last check time: %v", err)
 	}
 
 	// Clean old records
 	retentionDays := 7 // Default from config
 	if err := state.CleanOldRecords(retentionDays); err != nil {
-		logger.Warningf("Failed to clean old records: %v", err)
+		watcherLogger.Warning("Failed to clean old records: %v", err)
 	}
 
-	if err := logger.CleanOldLogs(retentionDays); err != nil {
-		logger.Warningf("Failed to clean old logs: %v", err)
-	}
+	// Note: Log cleanup is handled by the logger itself, no manual cleanup needed
 
 	if dryRun {
-		ui.Info("🔍 Dry-run completed. No changes were made.")
+		log.Info("🔍 Dry-run completed. No changes were made.")
 	} else {
-		ui.Success(fmt.Sprintf("✅ Processed %d PR(s)", len(mergedPRs)))
+		log.Success("✅ Processed %d PR(s)", len(mergedPRs))
 	}
 
-	ui.Info(fmt.Sprintf("\n📝 Logs: %s", logger.GetFilePath()))
+	// Log file path is in the config directory
+	configDir, _ := utils.GetConfigDir()
+	if configDir != "" {
+		logPath := filepath.Join(configDir, "watch.log")
+		log.Info("\n📝 Logs: %s", logPath)
+	}
 }
 
 func runWatchDaemon(cmd *cobra.Command, args []string) {
@@ -321,21 +330,21 @@ func runWatchStart(cmd *cobra.Command, args []string) {
 	// Check if already running
 	running, pid, err := watcher.IsRunning()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to check daemon status: %v", err))
+		log.Error("Failed to check daemon status: %v", err)
 		return
 	}
 
 	if running {
-		ui.Warning(fmt.Sprintf("Watch daemon is already running (PID: %d)", pid))
+		log.Warning("Watch daemon is already running (PID: %d)", pid)
 		return
 	}
 
-	ui.Info("🚀 Starting watch daemon...")
+	log.Info("🚀 Starting watch daemon...")
 
 	// Fork daemon process
 	execPath, err := os.Executable()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to get executable path: %v", err))
+		log.Error("Failed to get executable path: %v", err)
 		return
 	}
 
@@ -346,7 +355,7 @@ func runWatchStart(cmd *cobra.Command, args []string) {
 
 	process, err := os.StartProcess(execPath, []string{execPath, "watch", "daemon"}, procAttr)
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to start daemon: %v", err))
+		log.Error("Failed to start daemon: %v", err)
 		return
 	}
 
@@ -359,36 +368,36 @@ func runWatchStart(cmd *cobra.Command, args []string) {
 	// Verify it's running
 	running, pid, _ = watcher.IsRunning()
 	if running {
-		ui.Success(fmt.Sprintf("✅ Watch daemon started successfully (PID: %d)", pid))
+		log.Success("✅ Watch daemon started successfully (PID: %d)", pid)
 	} else {
-		ui.Warning("Daemon may have failed to start. Check logs for details.")
+		log.Warning("Daemon may have failed to start. Check logs for details.")
 	}
 }
 
 func runWatchStop(cmd *cobra.Command, args []string) {
 	running, pid, err := watcher.IsRunning()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to check daemon status: %v", err))
+		log.Error("Failed to check daemon status: %v", err)
 		return
 	}
 
 	if !running {
-		ui.Info("Watch daemon is not running")
+		log.Info("Watch daemon is not running")
 		return
 	}
 
-	ui.Info(fmt.Sprintf("🛑 Stopping watch daemon (PID: %d)...", pid))
+	log.Info("🛑 Stopping watch daemon (PID: %d)...", pid)
 
 	// Find process
 	process, err := os.FindProcess(pid)
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to find process: %v", err))
+		log.Error("Failed to find process: %v", err)
 		return
 	}
 
 	// Send SIGTERM
 	if err := process.Signal(syscall.SIGTERM); err != nil {
-		ui.Error(fmt.Sprintf("Failed to send stop signal: %v", err))
+		log.Error("Failed to send stop signal: %v", err)
 		return
 	}
 
@@ -397,16 +406,16 @@ func runWatchStop(cmd *cobra.Command, args []string) {
 		time.Sleep(500 * time.Millisecond)
 		running, _, _ := watcher.IsRunning()
 		if !running {
-			ui.Success("✅ Watch daemon stopped")
+			log.Success("✅ Watch daemon stopped")
 			return
 		}
 	}
 
-	ui.Warning("Daemon did not stop within timeout. It may still be shutting down.")
+	log.Warning("Daemon did not stop within timeout. It may still be shutting down.")
 }
 
 func runWatchRestart(cmd *cobra.Command, args []string) {
-	ui.Info("🔄 Restarting watch daemon...")
+	log.Info("🔄 Restarting watch daemon...")
 
 	// Stop if running
 	running, _, _ := watcher.IsRunning()
@@ -422,57 +431,50 @@ func runWatchRestart(cmd *cobra.Command, args []string) {
 func runWatchStatus(cmd *cobra.Command, args []string) {
 	state, err := watcher.NewState()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to load state: %v", err))
+		log.Error("Failed to load state: %v", err)
 		return
 	}
-
-	logger, err := watcher.NewLogger()
-	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to create logger: %v", err))
-		return
-	}
-	defer logger.Close()
 
 	cfg := config.Get()
 
-	fmt.Println()
-	fmt.Println("🔍 Watch Daemon Status")
-	fmt.Println()
+	log.Info("")
+	log.Info("🔍 Watch Daemon Status")
+	log.Info("")
 
 	// Check if running
 	running, pid, _ := watcher.IsRunning()
 
 	if running {
 		uptime := time.Since(state.DaemonStartTime)
-		fmt.Printf("Status: Running ✅\n")
-		fmt.Printf("PID: %d\n", pid)
-		fmt.Printf("Started: %s (uptime: %s)\n",
+		log.Info("Status: Running ✅")
+		log.Info("PID: %d", pid)
+		log.Info("Started: %s (uptime: %s)",
 			state.DaemonStartTime.Format("2006-01-02 15:04:05"),
 			formatDuration(uptime))
 
 		if !state.LastCheckTime.IsZero() {
 			lastCheck := time.Since(state.LastCheckTime)
-			fmt.Printf("Last Check: %s (%s ago)\n",
+			log.Info("Last Check: %s (%s ago)",
 				state.LastCheckTime.Format("2006-01-02 15:04:05"),
 				formatDuration(lastCheck))
 
 			// Calculate next check
 			scheduler := watcher.NewScheduler(nil)
 			nextCheck := scheduler.CalculateNextCheckTime(time.Now())
-			fmt.Printf("Next Check: %s (%s)\n",
+			log.Info("Next Check: %s (%s)",
 				nextCheck.Format("2006-01-02 15:04:05"),
 				scheduler.FormatNextCheckTime(nextCheck))
 		}
 	} else {
-		fmt.Println("Status: Stopped ⏸️")
-		fmt.Println()
-		ui.Warning("Watch daemon is not running")
+		log.Info("Status: Stopped ⏸️")
+		log.Info("")
+		log.Warning("Watch daemon is not running")
 	}
 
-	fmt.Println()
-	fmt.Println("📊 Statistics (last 7 days):")
+	log.Info("")
+	log.Info("📊 Statistics (last 7 days):")
 	recentPRs := state.GetRecentPRs(7)
-	fmt.Printf("  PRs Processed: %d\n", len(recentPRs))
+	log.Info("  PRs Processed: %d", len(recentPRs))
 
 	successCount := 0
 	for _, pr := range recentPRs {
@@ -482,32 +484,35 @@ func runWatchStatus(cmd *cobra.Command, args []string) {
 			}
 		}
 	}
-	fmt.Printf("  Jira Updated: %d\n", successCount)
-	fmt.Printf("  Errors: %d\n", state.Stats.TotalErrors)
+	log.Info("  Jira Updated: %d", successCount)
+	log.Info("  Errors: %d", state.Stats.TotalErrors)
 
 	if cfg != nil {
-		fmt.Println()
-		fmt.Println("📋 Configuration:")
-		fmt.Printf("  Repository: %s/%s\n", cfg.GitHubOwner, cfg.GitHubRepo)
-		fmt.Printf("  Author: %s (only your PRs)\n", cfg.GitHubOwner)
-		fmt.Printf("  Check Interval: 15 minutes (daytime)\n")
-		fmt.Printf("  Night Checks: 02:00, 06:00\n")
-		fmt.Printf("  Log Retention: 7 days\n")
+		log.Info("")
+		log.Info("📋 Configuration:")
+		log.Info("  Repository: %s/%s", cfg.GitHubOwner, cfg.GitHubRepo)
+		log.Info("  Author: %s (only your PRs)", cfg.GitHubOwner)
+		log.Info("  Check Interval: 15 minutes (daytime)")
+		log.Info("  Night Checks: 02:00, 06:00")
+		log.Info("  Log Retention: 7 days")
 	}
 
-	fmt.Println()
-	fmt.Println("📝 Files:")
-	fmt.Printf("  Log: %s\n", logger.GetFilePath())
+	log.Info("")
+	log.Info("📝 Files:")
+	if configDir, err := utils.GetConfigDir(); err == nil && configDir != "" {
+		logPath := filepath.Join(configDir, "watch.log")
+		log.Info("  Log: %s", logPath)
+	}
 
 	if cfg != nil {
 		configDir, _ := utils.GetConfigDir()
 		if configDir != "" {
-			fmt.Printf("  State: %s/watch-state.json\n", configDir)
-			fmt.Printf("  Config: %s/config.yaml\n", configDir)
+			log.Info("  State: %s/watch-state.json", configDir)
+			log.Info("  Config: %s/config.yaml", configDir)
 		}
 	}
 
-	fmt.Println()
+	log.Info("")
 }
 
 func formatDuration(d time.Duration) string {
@@ -536,72 +541,72 @@ func formatDuration(d time.Duration) string {
 func runWatchInstall(cmd *cobra.Command, args []string) {
 	cfg := config.Get()
 	if cfg == nil {
-		ui.Error("Configuration not found. Please run 'qkflow init' first")
+		log.Error("Configuration not found. Please run 'qkflow init' first")
 		return
 	}
 
-	ui.Info("📦 Installing watch daemon...")
-	fmt.Println()
+	log.Info("📦 Installing watch daemon...")
+	log.Info("")
 
 	// Check prerequisites
-	ui.Info("Checking prerequisites...")
+	log.Info("Checking prerequisites...")
 	if cfg.GitHubToken == "" {
-		ui.Error("✗ GitHub token not configured")
+		log.Error("✗ GitHub token not configured")
 		return
 	}
-	ui.Info("  ✓ GitHub token configured")
+	log.Info("  ✓ GitHub token configured")
 
 	if cfg.JiraServiceAddress == "" || cfg.Email == "" || cfg.JiraAPIToken == "" {
-		ui.Error("✗ Jira not configured")
+		log.Error("✗ Jira not configured")
 		return
 	}
-	ui.Info("  ✓ Jira configured")
+	log.Info("  ✓ Jira configured")
 
 	// Check Jira status mappings
 	statusCache, err := jira.NewStatusCache()
 	if err != nil {
-		ui.Error(fmt.Sprintf("✗ Failed to load Jira status cache: %v", err))
+		log.Error("✗ Failed to load Jira status cache: %v", err)
 		return
 	}
 
 	mappings, err := statusCache.ListAllMappings()
 	if err != nil || len(mappings) == 0 {
-		ui.Warning("✗ No Jira status mappings found")
-		ui.Info("  Please run 'qkflow jira setup' to configure status mappings")
+		log.Warning("✗ No Jira status mappings found")
+		log.Info("  Please run 'qkflow jira setup' to configure status mappings")
 		return
 	}
-	ui.Info(fmt.Sprintf("  ✓ Jira status mappings found (%d project(s))", len(mappings)))
+	log.Info("  ✓ Jira status mappings found (%d project(s))", len(mappings))
 
-	fmt.Println()
+	log.Info("")
 
 	// Check if already installed
 	installed, err := watcher.IsLaunchAgentInstalled()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to check installation status: %v", err))
+		log.Error("Failed to check installation status: %v", err)
 		return
 	}
 
 	if installed {
-		ui.Warning("Watch daemon is already installed")
-		ui.Info("To reinstall, run 'qkflow watch uninstall' first")
+		log.Warning("Watch daemon is already installed")
+		log.Info("To reinstall, run 'qkflow watch uninstall' first")
 		return
 	}
 
 	// Get executable path
 	execPath, err := os.Executable()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to get executable path: %v", err))
+		log.Error("Failed to get executable path: %v", err)
 		return
 	}
 
 	// Install launch agent
-	ui.Info("Creating launch agent...")
+	log.Info("Creating launch agent...")
 	if err := watcher.InstallLaunchAgent(execPath); err != nil {
-		ui.Error(fmt.Sprintf("✗ Failed to install launch agent: %v", err))
+		log.Error("✗ Failed to install launch agent: %v", err)
 		return
 	}
-	ui.Info("  ✓ Generated plist file")
-	ui.Info("  ✓ Installed to ~/Library/LaunchAgents/")
+	log.Info("  ✓ Generated plist file")
+	log.Info("  ✓ Installed to ~/Library/LaunchAgents/")
 
 	// Give it a moment to start
 	time.Sleep(2 * time.Second)
@@ -609,57 +614,57 @@ func runWatchInstall(cmd *cobra.Command, args []string) {
 	// Check if running
 	running, pid, _ := watcher.IsRunning()
 	if running {
-		ui.Info(fmt.Sprintf("  ✓ Watch daemon started (PID: %d)", pid))
+		log.Info("  ✓ Watch daemon started (PID: %d)", pid)
 	} else {
-		ui.Warning("  ⚠️  Daemon may take a moment to start")
+		log.Warning("  ⚠️  Daemon may take a moment to start")
 	}
 
-	fmt.Println()
-	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-	fmt.Println()
-	ui.Success("🎉 Installation complete!")
-	fmt.Println()
-	fmt.Println("The watch daemon is now running and will:")
-	fmt.Println("  • Check your PRs every 15 minutes (8:30-24:00)")
-	fmt.Println("  • Check twice during night (2:00, 6:00)")
-	fmt.Println("  • Update Jira when PRs merge")
-	fmt.Println("  • Start automatically on login")
-	fmt.Println()
-	fmt.Println("📊 Useful commands:")
-	fmt.Println("  • Check status: qkflow watch status")
-	fmt.Println("  • View logs: qkflow watch log --follow")
-	fmt.Println("  • View history: qkflow watch history")
-	fmt.Println("  • Stop daemon: qkflow watch stop")
-	fmt.Println("  • Uninstall: qkflow watch uninstall")
-	fmt.Println()
+	log.Info("")
+	log.Info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Info("")
+	log.Success("🎉 Installation complete!")
+	log.Info("")
+	log.Info("The watch daemon is now running and will:")
+	log.Info("  • Check your PRs every 15 minutes (8:30-24:00)")
+	log.Info("  • Check twice during night (2:00, 6:00)")
+	log.Info("  • Update Jira when PRs merge")
+	log.Info("  • Start automatically on login")
+	log.Info("")
+	log.Info("📊 Useful commands:")
+	log.Info("  • Check status: qkflow watch status")
+	log.Info("  • View logs: qkflow watch log --follow")
+	log.Info("  • View history: qkflow watch history")
+	log.Info("  • Stop daemon: qkflow watch stop")
+	log.Info("  • Uninstall: qkflow watch uninstall")
+	log.Info("")
 
-	logger, _ := watcher.NewLogger()
-	if logger != nil {
-		fmt.Printf("📝 Logs: %s\n", logger.GetFilePath())
-		logger.Close()
+	configDir, _ := utils.GetConfigDir()
+	if configDir != "" {
+		logPath := filepath.Join(configDir, "watch.log")
+		log.Info("📝 Logs: %s", logPath)
 	}
 }
 
 func runWatchUninstall(cmd *cobra.Command, args []string) {
-	ui.Info("🗑️  Uninstalling watch daemon...")
-	fmt.Println()
+	log.Info("🗑️  Uninstalling watch daemon...")
+	log.Info("")
 
 	// Check if installed
 	installed, err := watcher.IsLaunchAgentInstalled()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to check installation status: %v", err))
+		log.Error("Failed to check installation status: %v", err)
 		return
 	}
 
 	if !installed {
-		ui.Info("Watch daemon is not installed")
+		log.Info("Watch daemon is not installed")
 		return
 	}
 
 	// Stop daemon if running
 	running, pid, _ := watcher.IsRunning()
 	if running {
-		ui.Info(fmt.Sprintf("Stopping daemon (PID: %d)...", pid))
+		log.Info("Stopping daemon (PID: %d)...", pid)
 
 		process, err := os.FindProcess(pid)
 		if err == nil {
@@ -667,51 +672,49 @@ func runWatchUninstall(cmd *cobra.Command, args []string) {
 			time.Sleep(time.Second)
 		}
 
-		ui.Info("  ✓ Daemon stopped")
+		log.Info("  ✓ Daemon stopped")
 	}
 
 	// Uninstall launch agent
-	ui.Info("Removing auto-start...")
+	log.Info("Removing auto-start...")
 	if err := watcher.UninstallLaunchAgent(); err != nil {
-		ui.Error(fmt.Sprintf("✗ Failed to uninstall launch agent: %v", err))
+		log.Error("✗ Failed to uninstall launch agent: %v", err)
 		return
 	}
 
 	plistPath, _ := watcher.GetLaunchAgentPath()
-	ui.Info("  ✓ Removed launch agent")
+	log.Info("  ✓ Removed launch agent")
 	if plistPath != "" {
-		ui.Info(fmt.Sprintf("  ✓ Deleted %s", plistPath))
+		log.Info("  ✓ Deleted %s", plistPath)
 	}
 
-	fmt.Println()
-	ui.Success("✅ Watch daemon completely uninstalled")
-	fmt.Println()
-	fmt.Println("The daemon will NOT start automatically anymore.")
+	log.Info("")
+	log.Success("✅ Watch daemon completely uninstalled")
+	log.Info("")
+	log.Info("The daemon will NOT start automatically anymore.")
 
 	configDir, _ := utils.GetConfigDir()
 	if configDir != "" {
-		fmt.Println("Logs and history are preserved at ~/.qkflow/")
+		log.Info("Logs and history are preserved at ~/.qkflow/")
 	}
 
-	fmt.Println()
-	fmt.Println("💡 To re-enable later, use 'qkflow watch install'")
+	log.Info("")
+	log.Info("💡 To re-enable later, use 'qkflow watch install'")
 }
 
 func runWatchLog(cmd *cobra.Command, args []string) {
-	logger, err := watcher.NewLogger()
+	configDir, err := utils.GetConfigDir()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to create logger: %v", err))
+		log.Error("Failed to get config directory: %v", err)
 		return
 	}
-	defer logger.Close()
-
-	logPath := logger.GetFilePath()
+	logPath := filepath.Join(configDir, "watch.log")
 
 	if followLog {
 		// Follow log (tail -f style)
-		ui.Info(fmt.Sprintf("Following logs: %s", logPath))
-		ui.Info("Press Ctrl+C to stop")
-		fmt.Println()
+		log.Info("Following logs: %s", logPath)
+		log.Info("Press Ctrl+C to stop")
+		log.Info("")
 
 		cmd := exec.Command("tail", "-f", logPath)
 		cmd.Stdout = os.Stdout
@@ -721,42 +724,42 @@ func runWatchLog(cmd *cobra.Command, args []string) {
 	}
 
 	// Show last N lines
-	lines, err := watcher.ReadLastLines(logPath, logLines)
+	lines, err := readLastLines(logPath, logLines)
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to read log file: %v", err))
+		log.Error("Failed to read log file: %v", err)
 		return
 	}
 
-	fmt.Println()
-	fmt.Printf("📝 Last %d lines from %s:\n", logLines, logPath)
-	fmt.Println()
+	log.Info("")
+	log.Info("📝 Last %d lines from %s:", logLines, logPath)
+	log.Info("")
 	for _, line := range lines {
-		fmt.Println(line)
+		log.Info(line)
 	}
-	fmt.Println()
+	log.Info("")
 }
 
 func runWatchHistory(cmd *cobra.Command, args []string) {
 	state, err := watcher.NewState()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to load state: %v", err))
+		log.Error("Failed to load state: %v", err)
 		return
 	}
 
 	prs := state.GetRecentPRs(historyDays)
 
 	if len(prs) == 0 {
-		ui.Info(fmt.Sprintf("No PRs processed in the last %d days", historyDays))
+		log.Info("No PRs processed in the last %d days", historyDays)
 		return
 	}
 
-	fmt.Println()
-	fmt.Printf("📋 PR Processing History (Last %d days)\n", historyDays)
-	fmt.Println()
+	log.Info("")
+	log.Info("📋 PR Processing History (Last %d days)", historyDays)
+	log.Info("")
 
 	for i, pr := range prs {
 		if i > 0 {
-			fmt.Println()
+			log.Info("")
 		}
 
 		// Determine overall success
@@ -779,88 +782,88 @@ func runWatchHistory(cmd *cobra.Command, args []string) {
 			}
 		}
 
-		fmt.Printf("%s PR #%d: %s\n", status, pr.PRNumber, pr.PRTitle)
-		fmt.Printf("   Branch: %s\n", pr.Branch)
-		fmt.Printf("   Merged: %s by %s\n", pr.MergedAt.Format("2006-01-02 15:04:05"), pr.MergedBy)
+		log.Info("%s PR #%d: %s", status, pr.PRNumber, pr.PRTitle)
+		log.Info("   Branch: %s", pr.Branch)
+		log.Info("   Merged: %s by %s", pr.MergedAt.Format("2006-01-02 15:04:05"), pr.MergedBy)
 
 		if len(pr.JiraTickets) > 0 {
-			fmt.Printf("   Jira: ")
+			tickets := ""
 			for j, ticket := range pr.JiraTickets {
 				if j > 0 {
-					fmt.Printf(", ")
+					tickets += ", "
 				}
-				fmt.Printf("%s", ticket)
+				tickets += ticket
 			}
-			fmt.Println()
+			log.Info("   Jira: %s", tickets)
 		}
 
 		if len(pr.JiraUpdates) > 0 {
 			for _, update := range pr.JiraUpdates {
 				if update.Success {
-					fmt.Printf("   ✓ %s: %s → %s\n", update.Ticket, update.OldStatus, update.NewStatus)
+					log.Info("   ✓ %s: %s → %s", update.Ticket, update.OldStatus, update.NewStatus)
 				} else {
-					fmt.Printf("   ✗ %s: %s\n", update.Ticket, update.Error)
+					log.Info("   ✗ %s: %s", update.Ticket, update.Error)
 				}
 			}
 		}
 
-		fmt.Printf("   Processed: %s\n", pr.ProcessedAt.Format("2006-01-02 15:04:05"))
+		log.Info("   Processed: %s", pr.ProcessedAt.Format("2006-01-02 15:04:05"))
 	}
 
-	fmt.Println()
-	fmt.Printf("Total: %d PRs processed, %d Jira updates\n", len(prs), state.Stats.TotalJiraUpdated)
-	fmt.Println()
+	log.Info("")
+	log.Info("Total: %d PRs processed, %d Jira updates", len(prs), state.Stats.TotalJiraUpdated)
+	log.Info("")
 }
 
 func runWatchConfig(cmd *cobra.Command, args []string) {
 	cfg := config.Get()
 	if cfg == nil {
-		ui.Error("Configuration not found")
+		log.Error("Configuration not found")
 		return
 	}
 
-	fmt.Println()
-	fmt.Println("⚙️  Watch Daemon Configuration")
-	fmt.Println()
+	log.Info("")
+	log.Info("⚙️  Watch Daemon Configuration")
+	log.Info("")
 
 	// Show watching list status
 	watchingList, err := watcher.NewWatchingList()
 	if err == nil {
-		fmt.Println("📋 Watching List:")
-		fmt.Printf("  Total PRs: %d\n", watchingList.Count())
+		log.Info("📋 Watching List:")
+		log.Info("  Total PRs: %d", watchingList.Count())
 		if watchingList.Count() > 0 {
 			for _, pr := range watchingList.GetAll() {
-				fmt.Printf("  • PR #%d: %s/%s\n", pr.PRNumber, pr.Owner, pr.Repo)
+				log.Info("  • PR #%d: %s/%s", pr.PRNumber, pr.Owner, pr.Repo)
 			}
 		}
 	}
 
-	fmt.Println()
-	fmt.Println("⏰ Schedule:")
-	fmt.Println("  Daytime (8:30-24:00): Every 15 minutes")
-	fmt.Println("  Night (0:00-8:30): 2:00, 6:00")
-	fmt.Println("  Log Retention: 7 days")
+	log.Info("")
+	log.Info("⏰ Schedule:")
+	log.Info("  Daytime (8:30-24:00): Every 15 minutes")
+	log.Info("  Night (0:00-8:30): 2:00, 6:00")
+	log.Info("  Log Retention: 7 days")
 
-	fmt.Println()
-	fmt.Println("🔔 Notifications:")
-	fmt.Println("  Desktop Notify: Enabled (macOS)")
+	log.Info("")
+	log.Info("🔔 Notifications:")
+	log.Info("  Desktop Notify: Enabled (macOS)")
 
 	// Check installation status
 	installed, _ := watcher.IsLaunchAgentInstalled()
 	running, pid, _ := watcher.IsRunning()
 
-	fmt.Println()
-	fmt.Println("📊 Status:")
+	log.Info("")
+	log.Info("📊 Status:")
 	if installed {
-		fmt.Println("  Auto-start: Enabled ✅")
+		log.Info("  Auto-start: Enabled ✅")
 	} else {
-		fmt.Println("  Auto-start: Not installed ❌")
+		log.Info("  Auto-start: Not installed ❌")
 	}
 
 	if running {
-		fmt.Printf("  Daemon: Running (PID: %d) ✅\n", pid)
+		log.Info("  Daemon: Running (PID: %d) ✅", pid)
 	} else {
-		fmt.Println("  Daemon: Stopped ⏸️")
+		log.Info("  Daemon: Stopped ⏸️")
 	}
 
 	// Show Jira mappings
@@ -868,16 +871,48 @@ func runWatchConfig(cmd *cobra.Command, args []string) {
 	if err == nil {
 		mappings, err := statusCache.ListAllMappings()
 		if err == nil && len(mappings) > 0 {
-			fmt.Println()
-			fmt.Println("🎫 Jira Status Mappings:")
+			log.Info("")
+			log.Info("🎫 Jira Status Mappings:")
 			for _, mapping := range mappings {
-				fmt.Printf("  %s:\n", mapping.ProjectKey)
-				fmt.Printf("    PR Created → %s\n", mapping.PRCreatedStatus)
-				fmt.Printf("    PR Merged  → %s\n", mapping.PRMergedStatus)
+				log.Info("  %s:", mapping.ProjectKey)
+				log.Info("    PR Created → %s", mapping.PRCreatedStatus)
+				log.Info("    PR Merged  → %s", mapping.PRMergedStatus)
 			}
 		}
 	}
 
-	fmt.Println()
+	log.Info("")
 }
 
+// readLastLines reads the last N lines from a file
+func readLastLines(filePath string, n int) ([]string, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read log file: %w", err)
+	}
+
+	lines := make([]string, 0)
+	currentLine := ""
+
+	for i := 0; i < len(data); i++ {
+		if data[i] == '\n' {
+			if currentLine != "" {
+				lines = append(lines, currentLine)
+			}
+			currentLine = ""
+		} else {
+			currentLine += string(data[i])
+		}
+	}
+
+	if currentLine != "" {
+		lines = append(lines, currentLine)
+	}
+
+	// Return last n lines
+	if len(lines) <= n {
+		return lines, nil
+	}
+
+	return lines[len(lines)-n:], nil
+}

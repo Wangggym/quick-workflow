@@ -11,14 +11,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wangggym/quick-workflow/internal/ui"
 	"github.com/Wangggym/quick-workflow/internal/config"
+	"github.com/Wangggym/quick-workflow/internal/logger"
 )
 
 const (
-	githubAPIURL     = "https://api.github.com/repos/Wangggym/quick-workflow/releases/latest"
-	updateCheckFile  = ".last_update_check"
-	checkInterval    = 24 * time.Hour // Check once per day
+	githubAPIURL    = "https://api.github.com/repos/Wangggym/quick-workflow/releases/latest"
+	updateCheckFile = ".last_update_check"
+	checkInterval   = 24 * time.Hour // Check once per day
 )
 
 // GitHubRelease represents a GitHub release
@@ -51,22 +51,26 @@ func CheckAndUpdate(currentVersion string, autoUpdate bool) error {
 	}
 
 	// New version available
-	ui.Info(fmt.Sprintf("🎉 New version available: %s (current: %s)", latestVersion, currentVersion))
+	log, _ := logger.NewLogger(&logger.LoggerOptions{
+		Type: logger.LoggerTypeUI,
+		// Level omitted - will use QKFLOW_LOG_LEVEL env var or default LevelInfo
+	})
+	log.Info("🎉 New version available: %s (current: %s)", latestVersion, currentVersion)
 
 	if !autoUpdate {
-		ui.Info(fmt.Sprintf("Run 'qkflow update-cli' to update, or visit: https://github.com/Wangggym/quick-workflow/releases"))
+		log.Info("Run 'qkflow update-cli' to update, or visit: https://github.com/Wangggym/quick-workflow/releases")
 		return nil
 	}
 
 	// Auto update
-	ui.Info("⬇️  Downloading update...")
+	log.Info("⬇️  Downloading update...")
 	if err := downloadAndInstall(downloadURL); err != nil {
-		ui.Error(fmt.Sprintf("Failed to auto-update: %v", err))
-		ui.Info("Please update manually: https://github.com/Wangggym/quick-workflow/releases")
+		log.Error("Failed to auto-update: %v", err)
+		log.Info("Please update manually: https://github.com/Wangggym/quick-workflow/releases")
 		return nil
 	}
 
-	ui.Success(fmt.Sprintf("✅ Successfully updated to version %s! Please restart qkflow.", latestVersion))
+	log.Success("✅ Successfully updated to version %s! Please restart qkflow.", latestVersion)
 	os.Exit(0)
 	return nil
 }
@@ -235,19 +239,22 @@ func ManualUpdate(currentVersion string) error {
 		return fmt.Errorf("failed to check for updates: %w", err)
 	}
 
+	log, _ := logger.NewLogger(&logger.LoggerOptions{
+		Type: logger.LoggerTypeUI,
+		// Level omitted - will use QKFLOW_LOG_LEVEL env var or default LevelInfo
+	})
 	if !isNewerVersion(currentVersion, latestVersion) {
-		ui.Success(fmt.Sprintf("✅ You are already running the latest version (%s)", currentVersion))
+		log.Success("✅ You are already running the latest version (%s)", currentVersion)
 		return nil
 	}
 
-	ui.Info(fmt.Sprintf("🎉 New version available: %s (current: %s)", latestVersion, currentVersion))
-	ui.Info("⬇️  Downloading update...")
+	log.Info("🎉 New version available: %s (current: %s)", latestVersion, currentVersion)
+	log.Info("⬇️  Downloading update...")
 
 	if err := downloadAndInstall(downloadURL); err != nil {
 		return fmt.Errorf("failed to update: %w", err)
 	}
 
-	ui.Success(fmt.Sprintf("✅ Successfully updated to version %s! Please restart qkflow.", latestVersion))
+	log.Success("✅ Successfully updated to version %s! Please restart qkflow.", latestVersion)
 	return nil
 }
-

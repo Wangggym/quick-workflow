@@ -26,6 +26,11 @@ type Config struct {
 
 var globalConfig *Config
 
+// Reset clears the cached configuration, forcing a reload on next Load() call
+func Reset() {
+	globalConfig = nil
+}
+
 // Load loads configuration from file and environment variables
 func Load() (*Config, error) {
 	if globalConfig != nil {
@@ -159,4 +164,3 @@ func setDefaults() {
 func GetConfigDir() (string, error) {
 	return utils.GetQuickWorkflowConfigDir()
 }
-

@@ -116,19 +116,19 @@ func TestParsePRFromURL(t *testing.T) {
 			owner, repo, pr, err := ParsePRFromURL(tt.url)
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ParsePRFromURL() error = %v, wantErr %v", err, tt.wantErr)
+				t.Error("ParsePRFromURL() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			if !tt.wantErr {
 				if owner != tt.wantOwner {
-					t.Errorf("ParsePRFromURL() owner = %v, want %v", owner, tt.wantOwner)
+					t.Error("ParsePRFromURL() owner = %v, want %v", owner, tt.wantOwner)
 				}
 				if repo != tt.wantRepo {
-					t.Errorf("ParsePRFromURL() repo = %v, want %v", repo, tt.wantRepo)
+					t.Error("ParsePRFromURL() repo = %v, want %v", repo, tt.wantRepo)
 				}
 				if pr != tt.wantPR {
-					t.Errorf("ParsePRFromURL() pr = %v, want %v", pr, tt.wantPR)
+					t.Error("ParsePRFromURL() pr = %v, want %v", pr, tt.wantPR)
 				}
 			}
 		})
@@ -186,7 +186,7 @@ func TestIsPRURL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := IsPRURL(tt.url); got != tt.want {
-				t.Errorf("IsPRURL() = %v, want %v", got, tt.want)
+				t.Error("IsPRURL() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -242,16 +242,16 @@ func TestParseRepositoryFromURL(t *testing.T) {
 			owner, repo, err := ParseRepositoryFromURL(tt.url)
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseRepositoryFromURL() error = %v, wantErr %v", err, tt.wantErr)
+				t.Error("ParseRepositoryFromURL() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			if !tt.wantErr {
 				if owner != tt.wantOwner {
-					t.Errorf("ParseRepositoryFromURL() owner = %v, want %v", owner, tt.wantOwner)
+					t.Error("ParseRepositoryFromURL() owner = %v, want %v", owner, tt.wantOwner)
 				}
 				if repo != tt.wantRepo {
-					t.Errorf("ParseRepositoryFromURL() repo = %v, want %v", repo, tt.wantRepo)
+					t.Error("ParseRepositoryFromURL() repo = %v, want %v", repo, tt.wantRepo)
 				}
 			}
 		})
