@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/Wangggym/quick-workflow/internal/jira"
-	"github.com/Wangggym/quick-workflow/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -36,14 +35,14 @@ Usage in Cursor:
 
 		// Validate issue key
 		if !jira.ValidateIssueKey(issueKey) {
-			ui.Error(fmt.Sprintf("Invalid issue key: %s", issueKey))
+			log.Error("Invalid issue key: %s", issueKey)
 			return
 		}
 
 		// Create Jira client
 		client, err := jira.NewClient()
 		if err != nil {
-			ui.Error(fmt.Sprintf("Failed to create Jira client: %v", err))
+			log.Error("Failed to create Jira client: %v", err)
 			return
 		}
 
@@ -51,16 +50,17 @@ Usage in Cursor:
 		exporter := jira.NewExporter(client)
 
 		// Check if issue has images
-		fmt.Printf("🔍 Analyzing %s...\n", issueKey)
+		log.Info("🔍 Analyzing %s...", issueKey)
 		hasImages, err := exporter.HasImages(issueKey)
 		if err != nil {
-			ui.Error(fmt.Sprintf("Failed to analyze issue: %v", err))
+			log.Error("Failed to analyze issue: %v", err)
 			return
 		}
 
 		if hasImages {
 			// Has images: export to files
-			fmt.Printf("📸 Found attachments, exporting with images...\n\n")
+			log.Info("📸 Found attachments, exporting with images...")
+			log.Info("")
 
 			// Use export command logic
 			opts := jira.ExportOptions{
@@ -71,38 +71,39 @@ Usage in Cursor:
 
 			result, err := exporter.Export(opts)
 			if err != nil {
-				ui.Error(fmt.Sprintf("Failed to export: %v", err))
+				log.Error("Failed to export: %v", err)
 				return
 			}
 
 			// Display results (Cursor-optimized output)
-			fmt.Println()
-			ui.Success(fmt.Sprintf("Exported to: %s/", result.ExportPath))
-			fmt.Println()
-			fmt.Printf("Main file: %s\n", result.ContentFile)
+			log.Info("")
+			log.Success("Exported to: %s/", result.ExportPath)
+			log.Info("")
+			log.Info("Main file: %s", result.ContentFile)
 			if len(result.ImageFiles) > 0 {
-				fmt.Printf("Images: %s/attachments/ (%d files)\n", result.ExportPath, len(result.ImageFiles))
+				log.Info("Images: %s/attachments/ (%d files)", result.ExportPath, len(result.ImageFiles))
 			}
-			fmt.Println()
+			log.Info("")
 
 			// Cursor-specific hints
-			fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-			fmt.Println("💡 CURSOR: Please read the following files:")
-			fmt.Printf("1. %s\n", result.ContentFile)
+			log.Info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+			log.Info("💡 CURSOR: Please read the following files:")
+			log.Info("1. %s", result.ContentFile)
 			if len(result.ImageFiles) > 0 {
-				fmt.Printf("2. All images in %s/attachments/\n", result.ExportPath)
+				log.Info("2. All images in %s/attachments/", result.ExportPath)
 			}
-			fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-			fmt.Println()
+			log.Info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+			log.Info("")
 
 		} else {
 			// No images: display in terminal
-			fmt.Printf("ℹ️  No attachments found, showing content directly...\n\n")
+			log.Info("ℹ️  No attachments found, showing content directly...")
+			log.Info("")
 
 			// Get detailed issue
 			issue, err := client.GetIssueDetailed(issueKey)
 			if err != nil {
-				ui.Error(fmt.Sprintf("Failed to get issue: %v", err))
+				log.Error("Failed to get issue: %v", err)
 				return
 			}
 
@@ -117,4 +118,3 @@ Usage in Cursor:
 func init() {
 	jiraReadCmd.Flags().BoolVarP(&readAuto, "auto", "a", true, "Automatically decide between terminal output and file export (default: true)")
 }
-

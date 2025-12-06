@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wangggym/quick-workflow/pkg/config"
+	"github.com/Wangggym/quick-workflow/internal/config"
 	jira "github.com/andygrunwald/go-jira"
 )
 
@@ -275,7 +275,7 @@ func (c *Client) GetProjectStatuses(projectKey string) ([]string, error) {
 	// 如果项目有特定的工作流，这里应该过滤
 	// 简化实现：返回所有唯一状态
 	_ = project // 避免未使用变量警告
-	
+
 	return statusNames, nil
 }
 

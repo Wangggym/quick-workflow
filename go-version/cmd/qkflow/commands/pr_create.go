@@ -11,9 +11,9 @@ import (
 	"github.com/Wangggym/quick-workflow/internal/git"
 	"github.com/Wangggym/quick-workflow/internal/github"
 	"github.com/Wangggym/quick-workflow/internal/jira"
-	"github.com/Wangggym/quick-workflow/internal/ui"
 	"github.com/Wangggym/quick-workflow/internal/watcher"
-	"github.com/Wangggym/quick-workflow/pkg/config"
+	"github.com/Wangggym/quick-workflow/internal/config"
+	"github.com/Wangggym/quick-workflow/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -34,18 +34,18 @@ var prCreateCmd = &cobra.Command{
 func runPRCreate(cmd *cobra.Command, args []string) {
 	// 检查是否在 Git 仓库中
 	if !git.IsGitRepository() {
-		ui.Error("Not a git repository")
+		log.Error("Not a git repository")
 		return
 	}
 
 	// 检查是否有未提交的更改
 	hasChanges, err := git.HasUncommittedChanges()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to check git status: %v", err))
+		log.Error("Failed to check git status: %v", err)
 		return
 	}
 	if !hasChanges {
-		ui.Error("No changes to commit. Please stage your changes first with 'git add'")
+		log.Error("No changes to commit. Please stage your changes first with 'git add'")
 		return
 	}
 
@@ -58,10 +58,10 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 		if err != nil {
 			// 用户取消操作
 			if err.Error() == "interrupt" {
-				ui.Warning("Operation cancelled by user")
+				log.Warning("Operation cancelled by user")
 				os.Exit(0)
 			}
-			ui.Error(fmt.Sprintf("Failed to get input: %v", err))
+			log.Error("Failed to get input: %v", err)
 			return
 		}
 	}
@@ -71,20 +71,20 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 	if jiraTicket != "" && jira.ValidateIssueKey(jiraTicket) {
 		jiraClient, err := jira.NewClient()
 		if err != nil {
-			ui.Warning(fmt.Sprintf("Failed to create Jira client: %v", err))
+			log.Warning("Failed to create Jira client: %v", err)
 		} else {
 			jiraIssue, err = jiraClient.GetIssue(jiraTicket)
 			if err != nil {
-				ui.Warning(fmt.Sprintf("Failed to get Jira issue: %v", err))
+				log.Warning("Failed to get Jira issue: %v", err)
 			} else {
-				ui.Info(fmt.Sprintf("Found Jira issue: %s", jiraIssue.Summary))
+				log.Info("Found Jira issue: %s", jiraIssue.Summary)
 			}
 		}
 	}
 
 	// 显示 Jira 信息
 	if jiraIssue != nil {
-		ui.Info(fmt.Sprintf("Jira issue: %s", jiraIssue.Summary))
+		log.Info("Jira issue: %s", jiraIssue.Summary)
 	}
 
 	// 选择变更类型
@@ -92,10 +92,10 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 	selectedTypes, err := ui.PromptMultiSelect("Select type(s) of changes:", prTypes)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			ui.Warning("Operation cancelled by user")
+			log.Warning("Operation cancelled by user")
 			os.Exit(0)
 		}
-		ui.Warning("No types selected, continuing...")
+		log.Warning("No types selected, continuing...")
 		selectedTypes = []string{}
 	}
 
@@ -103,16 +103,16 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 	var editorResult *editor.EditorResult
 	addDescription, err := ui.PromptOptional("Add detailed description with images/videos?")
 	if err == nil && addDescription {
-		ui.Info("Opening web editor...")
+		log.Info("Opening web editor...")
 		editorResult, err = editor.StartEditor()
 		if err != nil {
-			ui.Warning(fmt.Sprintf("Failed to start editor: %v", err))
+			log.Warning("Failed to start editor: %v", err)
 			editorResult = nil
 		} else if editorResult.Content == "" && len(editorResult.Files) == 0 {
-			ui.Info("No content added, skipping...")
+			log.Info("No content added, skipping...")
 			editorResult = nil
 		} else {
-			ui.Success(fmt.Sprintf("Content saved! (%d characters, %d files)", len(editorResult.Content), len(editorResult.Files)))
+			log.Success("Content saved! (%d characters, %d files)", len(editorResult.Content), len(editorResult.Files))
 		}
 	}
 
@@ -124,33 +124,33 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 		if len(selectedTypes) > 0 {
 			prType = ui.ExtractPRType(selectedTypes[0])
 		}
-		
+
 		// 使用 AI 生成简洁的 PR 标题
 		aiClient, err := ai.NewClient()
 		if err == nil && prType != "" {
-			ui.Info("Generating PR title with AI...")
+			log.Info("Generating PR title with AI...")
 			title, err = aiClient.GeneratePRTitle(jiraIssue.Summary, prType, "")
 			if err != nil {
-				ui.Warning(fmt.Sprintf("AI generation failed: %v", err))
+				log.Warning("AI generation failed: %v", err)
 				// 回退到简单格式
 				title = generateSimpleTitle(jiraIssue.Summary, prType, "")
 			} else {
-				ui.Success(fmt.Sprintf("Generated title: %s", title))
+				log.Success("Generated title: %s", title)
 			}
 		} else {
 			// 没有 AI 或没有类型，使用简单生成
 			title = generateSimpleTitle(jiraIssue.Summary, prType, "")
-			ui.Success(fmt.Sprintf("Generated title: %s", title))
+			log.Success("Generated title: %s", title)
 		}
 	} else {
 		// 没有 Jira，手动输入
 		title, err = ui.PromptInput("Enter PR title:", true)
 		if err != nil {
 			if err.Error() == "interrupt" {
-				ui.Warning("Operation cancelled by user")
+				log.Warning("Operation cancelled by user")
 				os.Exit(0)
 			}
-			ui.Error(fmt.Sprintf("Failed to get title: %v", err))
+			log.Error("Failed to get title: %v", err)
 			return
 		}
 	}
@@ -165,18 +165,18 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 		branchName = cfg.BranchPrefix + "/" + branchName
 	}
 
-	ui.Info(fmt.Sprintf("Creating branch: %s", branchName))
+	log.Info("Creating branch: %s", branchName)
 
 	// 创建分支
 	if err := git.CreateBranch(branchName); err != nil {
-		ui.Error(fmt.Sprintf("Failed to create branch: %v", err))
+		log.Error("Failed to create branch: %v", err)
 		return
 	}
 
 	// Stage 所有更改
-	ui.Info("Staging changes...")
+	log.Info("Staging changes...")
 	if err := git.AddAll(); err != nil {
-		ui.Error(fmt.Sprintf("Failed to stage changes: %v", err))
+		log.Error("Failed to stage changes: %v", err)
 		return
 	}
 
@@ -188,46 +188,46 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 		// 无 Jira ticket 时，添加 # 前缀
 		commitMessage = fmt.Sprintf("# %s", title)
 	}
-	
-	ui.Info("Committing changes...")
+
+	log.Info("Committing changes...")
 	if err := git.Commit(commitMessage); err != nil {
-		ui.Error(fmt.Sprintf("Failed to commit: %v", err))
+		log.Error("Failed to commit: %v", err)
 		return
 	}
 
 	// 推送分支
-	ui.Info("Pushing branch to remote...")
+	log.Info("Pushing branch to remote...")
 	if err := git.Push(branchName); err != nil {
-		ui.Error(fmt.Sprintf("Failed to push: %v", err))
+		log.Error("Failed to push: %v", err)
 		return
 	}
 
 	// 获取仓库信息
 	remoteURL, err := git.GetRemoteURL()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to get remote URL: %v", err))
+		log.Error("Failed to get remote URL: %v", err)
 		return
 	}
 
 	owner, repo, err := github.ParseRepositoryFromURL(remoteURL)
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to parse repository: %v", err))
+		log.Error("Failed to parse repository: %v", err)
 		return
 	}
 
 	// 获取默认分支
 	defaultBranch, err := git.GetDefaultBranch()
 	if err != nil {
-		ui.Warning(fmt.Sprintf("Failed to detect default branch, using 'main': %v", err))
+		log.Warning("Failed to detect default branch, using 'main': %v", err)
 		defaultBranch = "main"
 	}
-	ui.Info(fmt.Sprintf("Using base branch: %s", defaultBranch))
+	log.Info("Using base branch: %s", defaultBranch)
 
 	// 创建 PR
-	ui.Info("Creating pull request...")
+	log.Info("Creating pull request...")
 	ghClient, err := github.NewClient()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to create GitHub client: %v", err))
+		log.Error("Failed to create GitHub client: %v", err)
 		return
 	}
 
@@ -240,22 +240,22 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 		Base:  defaultBranch,
 	})
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to create PR: %v", err))
+		log.Error("Failed to create PR: %v", err)
 		return
 	}
 
-	ui.Success(fmt.Sprintf("Pull request created: %s", pr.HTMLURL))
+	log.Success("Pull request created: %s", pr.HTMLURL)
 
 	// 处理编辑器内容（上传文件并添加评论）
 	if editorResult != nil && (editorResult.Content != "" || len(editorResult.Files) > 0) {
-		ui.Info("Processing description and files...")
-		
+		log.Info("Processing description and files...")
+
 		// 创建 Jira 客户端（如果需要）
 		var jiraClient *jira.Client
 		if jiraTicket != "" && jira.ValidateIssueKey(jiraTicket) {
 			jiraClient, err = jira.NewClient()
 			if err != nil {
-				ui.Warning(fmt.Sprintf("Failed to create Jira client for file upload: %v", err))
+				log.Warning("Failed to create Jira client for file upload: %v", err)
 				jiraClient = nil
 			}
 		}
@@ -263,7 +263,7 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 		// 上传文件
 		var uploadResults []editor.UploadResult
 		if len(editorResult.Files) > 0 {
-			ui.Info(fmt.Sprintf("Uploading %d file(s)...", len(editorResult.Files)))
+			log.Info("Uploading %d file(s)...", len(editorResult.Files))
 			uploadResults, err = editor.UploadFiles(
 				editorResult.Files,
 				ghClient,
@@ -274,9 +274,9 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 				jiraTicket,
 			)
 			if err != nil {
-				ui.Warning(fmt.Sprintf("Failed to upload files: %v", err))
+				log.Warning("Failed to upload files: %v", err)
 			} else {
-				ui.Success(fmt.Sprintf("Uploaded %d file(s)", len(uploadResults)))
+				log.Success("Uploaded %d file(s)", len(uploadResults))
 			}
 		}
 
@@ -288,22 +288,22 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 
 		// 添加评论到 GitHub PR
 		if content != "" {
-			ui.Info("Adding description to GitHub PR...")
+			log.Info("Adding description to GitHub PR...")
 			if err := ghClient.AddPRComment(owner, repo, pr.Number, content); err != nil {
-				ui.Warning(fmt.Sprintf("Failed to add comment to GitHub: %v", err))
+				log.Warning("Failed to add comment to GitHub: %v", err)
 			} else {
-				ui.Success("Description added to GitHub PR")
+				log.Success("Description added to GitHub PR")
 			}
 		}
 
 		// 添加评论到 Jira
 		if jiraClient != nil && jiraTicket != "" && content != "" {
-			ui.Info("Adding description to Jira...")
+			log.Info("Adding description to Jira...")
 			jiraComment := fmt.Sprintf("*PR Description:*\n\n%s\n\n[View PR|%s]", content, pr.HTMLURL)
 			if err := jiraClient.AddComment(jiraTicket, jiraComment); err != nil {
-				ui.Warning(fmt.Sprintf("Failed to add comment to Jira: %v", err))
+				log.Warning("Failed to add comment to Jira: %v", err)
 			} else {
-				ui.Success("Description added to Jira")
+				log.Success("Description added to Jira")
 			}
 		}
 
@@ -319,58 +319,58 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 	if jiraTicket != "" && jira.ValidateIssueKey(jiraTicket) {
 		jiraClient, err := jira.NewClient()
 		if err != nil {
-			ui.Warning(fmt.Sprintf("Failed to create Jira client: %v", err))
+			log.Warning("Failed to create Jira client: %v", err)
 		} else {
 			// 分配给当前用户
-			ui.Info("Assigning Jira ticket to you...")
+			log.Info("Assigning Jira ticket to you...")
 			if err := jiraClient.AssignToMe(jiraTicket); err != nil {
-				ui.Warning(fmt.Sprintf("Failed to assign ticket: %v", err))
+				log.Warning("Failed to assign ticket: %v", err)
 			} else {
-				ui.Success("Assigned Jira ticket to you")
+				log.Success("Assigned Jira ticket to you")
 			}
 
 			// 添加 PR 链接
-			ui.Info("Adding PR link to Jira...")
+			log.Info("Adding PR link to Jira...")
 			if err := jiraClient.AddPRLink(jiraTicket, pr.HTMLURL); err != nil {
-				ui.Warning(fmt.Sprintf("Failed to add PR link to Jira: %v", err))
+				log.Warning("Failed to add PR link to Jira: %v", err)
 			} else {
-				ui.Success("Added PR link to Jira")
+				log.Success("Added PR link to Jira")
 			}
 
 			// 更新状态
 				projectKey := jira.ExtractProjectKey(jiraTicket)
-			
+
 			// 检查状态缓存
 			statusCache, err := jira.NewStatusCache()
 			if err != nil {
-				ui.Warning(fmt.Sprintf("Failed to create status cache: %v", err))
+				log.Warning("Failed to create status cache: %v", err)
 			} else {
 				mapping, err := statusCache.GetProjectStatus(projectKey)
 				if err != nil {
-					ui.Warning(fmt.Sprintf("Failed to get cached status: %v", err))
+					log.Warning("Failed to get cached status: %v", err)
 				} else if mapping == nil {
 					// 第一次使用，配置状态映射
-					ui.Info(fmt.Sprintf("First time using project %s, please configure status mappings", projectKey))
+					log.Info("First time using project %s, please configure status mappings", projectKey)
 					mapping, err = setupProjectStatusMapping(jiraClient, projectKey)
 					if err != nil {
-						ui.Warning(fmt.Sprintf("Failed to setup status mapping: %v", err))
+						log.Warning("Failed to setup status mapping: %v", err)
 					} else if mapping != nil {
 						// 保存配置
 						if err := statusCache.SaveProjectStatus(mapping); err != nil {
-							ui.Warning(fmt.Sprintf("Failed to save status mapping: %v", err))
+							log.Warning("Failed to save status mapping: %v", err)
 						} else {
-							ui.Success("Status mapping saved!")
+							log.Success("Status mapping saved!")
 						}
 					}
 				}
-				
+
 				// 使用缓存的状态更新
 				if mapping != nil && mapping.PRCreatedStatus != "" {
-					ui.Info(fmt.Sprintf("Updating Jira status to: %s", mapping.PRCreatedStatus))
+					log.Info("Updating Jira status to: %s", mapping.PRCreatedStatus)
 					if err := jiraClient.UpdateStatus(jiraTicket, mapping.PRCreatedStatus); err != nil {
-						ui.Warning(fmt.Sprintf("Failed to update status: %v", err))
+						log.Warning("Failed to update status: %v", err)
 					} else {
-						ui.Success(fmt.Sprintf("Updated Jira status to: %s", mapping.PRCreatedStatus))
+						log.Success("Updated Jira status to: %s", mapping.PRCreatedStatus)
 					}
 				}
 			}
@@ -380,7 +380,7 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 	// 添加到 watching list
 	watchingList, err := watcher.NewWatchingList()
 	if err != nil {
-		ui.Warning(fmt.Sprintf("Failed to load watching list: %v", err))
+		log.Warning("Failed to load watching list: %v", err)
 	} else {
 		// Extract Jira tickets
 		jiraTickets := make([]string, 0)
@@ -399,20 +399,20 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 		}
 
 		if err := watchingList.Add(watchingPR); err != nil {
-			ui.Warning(fmt.Sprintf("Failed to add PR to watching list: %v", err))
+			log.Warning("Failed to add PR to watching list: %v", err)
 		} else {
-			ui.Info("✅ Added PR to watching list for auto Jira updates")
+			log.Info("✅ Added PR to watching list for auto Jira updates")
 		}
 	}
 
 	// 复制 URL 到剪贴板
 	copyToClipboard(pr.HTMLURL)
-	
+
 	// 打开浏览器
 	openBrowser(pr.HTMLURL)
-	
-	fmt.Println()
-	ui.Success("All done! 🎉")
+
+	log.Info("")
+	log.Success("All done! 🎉")
 }
 
 func buildBranchName(jiraTicket, title string) string {
@@ -451,7 +451,7 @@ func setupProjectStatusMapping(client *jira.Client, projectKey string) (*jira.St
 		return nil, fmt.Errorf("failed to get project statuses: %w", err)
 	}
 
-	ui.Info("Select status when PR is created/in progress:")
+	log.Info("Select status when PR is created/in progress:")
 	createdStatus, err := ui.PromptSelect("Status for PR created:", statuses)
 	if err != nil {
 		if err.Error() == "interrupt" {
@@ -460,7 +460,7 @@ func setupProjectStatusMapping(client *jira.Client, projectKey string) (*jira.St
 		return nil, fmt.Errorf("failed to select created status: %w", err)
 	}
 
-	ui.Info("Select status when PR is merged/done:")
+	log.Info("Select status when PR is merged/done:")
 	mergedStatus, err := ui.PromptSelect("Status for PR merged:", statuses)
 	if err != nil {
 		if err.Error() == "interrupt" {
@@ -484,13 +484,13 @@ func generateSimpleTitle(jiraSummary, prType, description string) string {
 		}
 		return description
 	}
-	
+
 	// 否则使用 Jira 标题的前 50 个字符
 	summary := jiraSummary
 	if len(summary) > 50 {
 		summary = summary[:50] + "..."
 	}
-	
+
 	if prType != "" {
 		return fmt.Sprintf("%s: %s", prType, summary)
 	}
@@ -502,9 +502,9 @@ func copyToClipboard(text string) {
 	cmd := exec.Command("pbcopy")
 	cmd.Stdin = strings.NewReader(text)
 	if err := cmd.Run(); err != nil {
-		ui.Warning("Failed to copy to clipboard")
+		log.Warning("Failed to copy to clipboard")
 	} else {
-		ui.Success(fmt.Sprintf("Successfully copied %s to clipboard", text))
+		log.Success("Successfully copied %s to clipboard", text)
 	}
 }
 
@@ -512,7 +512,7 @@ func openBrowser(url string) {
 	// macOS
 	cmd := exec.Command("open", url)
 	if err := cmd.Run(); err != nil {
-		ui.Warning(fmt.Sprintf("Failed to open browser: %v", err))
+		log.Warning("Failed to open browser: %v", err)
 	}
 }
 

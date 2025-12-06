@@ -13,7 +13,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/Wangggym/quick-workflow/internal/ui"
+	"github.com/Wangggym/quick-workflow/internal/logger"
 )
 
 // EditorResult contains the markdown content and uploaded files
@@ -63,14 +63,18 @@ func StartEditor() (*EditorResult, error) {
 
 	// Open browser
 	url := fmt.Sprintf("http://127.0.0.1:%d", server.port)
-	ui.Info(fmt.Sprintf("🌐 Opening editor in your browser: %s", url))
-	
+	log, _ := logger.NewLogger(&logger.LoggerOptions{
+		Type: logger.LoggerTypeUI,
+		// Level omitted - will use QKFLOW_LOG_LEVEL env var or default LevelInfo
+	})
+	log.Info("🌐 Opening editor in your browser: %s", url)
+
 	if err := openBrowser(url); err != nil {
-		ui.Warning("Could not open browser automatically. Please open the URL manually.")
+		log.Warning("Could not open browser automatically. Please open the URL manually.")
 		fmt.Println(url)
 	}
 
-	ui.Info("📝 Please edit your content in the browser and click 'Save and Continue'")
+	log.Info("📝 Please edit your content in the browser and click 'Save and Continue'")
 
 	// Wait for result or error
 	var result *EditorResult
@@ -135,7 +139,7 @@ func (s *editorServer) handleUpload(w http.ResponseWriter, r *http.Request) {
 	// Save file to temp directory
 	filename := filepath.Base(header.Filename)
 	filePath := filepath.Join(s.tempDir, filename)
-	
+
 	dst, err := os.Create(filePath)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -243,4 +247,3 @@ func isAllowedFileType(filename string) bool {
 	}
 	return allowed[ext]
 }
-

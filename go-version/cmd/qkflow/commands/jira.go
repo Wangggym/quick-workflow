@@ -29,28 +29,28 @@ var jiraListCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		statusCache, err := jira.NewStatusCache()
 		if err != nil {
-			ui.Error(fmt.Sprintf("Failed to create status cache: %v", err))
+			log.Error("Failed to create status cache: %v", err)
 			return
 		}
 
 		mappings, err := statusCache.ListAllMappings()
 		if err != nil {
-			ui.Error(fmt.Sprintf("Failed to list mappings: %v", err))
+			log.Error("Failed to list mappings: %v", err)
 			return
 		}
 
 		if len(mappings) == 0 {
-			ui.Info("No Jira status mappings configured yet")
+			log.Info("No Jira status mappings configured yet")
 			return
 		}
 
-		fmt.Println("\n📋 Jira Status Mappings:")
-		fmt.Println()
+		log.Info("\n📋 Jira Status Mappings:")
+		log.Info("")
 		for _, mapping := range mappings {
-			fmt.Printf("Project: %s\n", mapping.ProjectKey)
-			fmt.Printf("  PR Created → %s\n", mapping.PRCreatedStatus)
-			fmt.Printf("  PR Merged  → %s\n", mapping.PRMergedStatus)
-			fmt.Println()
+			log.Info("Project: %s", mapping.ProjectKey)
+			log.Info("  PR Created → %s", mapping.PRCreatedStatus)
+			log.Info("  PR Merged  → %s", mapping.PRMergedStatus)
+			log.Info("")
 		}
 	},
 }
@@ -64,33 +64,33 @@ var jiraSetupCmd = &cobra.Command{
 
 		jiraClient, err := jira.NewClient()
 		if err != nil {
-			ui.Error(fmt.Sprintf("Failed to create Jira client: %v", err))
+			log.Error("Failed to create Jira client: %v", err)
 			return
 		}
 
 		mapping, err := setupProjectStatusMapping(jiraClient, projectKey)
 		if err != nil {
-			ui.Error(fmt.Sprintf("Failed to setup mapping: %v", err))
+			log.Error("Failed to setup mapping: %v", err)
 			return
 		}
 
 		if mapping == nil {
-			ui.Info("Setup cancelled")
+			log.Info("Setup cancelled")
 			return
 		}
 
 		statusCache, err := jira.NewStatusCache()
 		if err != nil {
-			ui.Error(fmt.Sprintf("Failed to create status cache: %v", err))
+			log.Error("Failed to create status cache: %v", err)
 			return
 		}
 
 		if err := statusCache.SaveProjectStatus(mapping); err != nil {
-			ui.Error(fmt.Sprintf("Failed to save mapping: %v", err))
+			log.Error("Failed to save mapping: %v", err)
 			return
 		}
 
-		ui.Success(fmt.Sprintf("Status mapping saved for project %s!", projectKey))
+		log.Success("Status mapping saved for project %s!", projectKey)
 	},
 }
 
@@ -103,22 +103,22 @@ var jiraDeleteCmd = &cobra.Command{
 
 		confirm, err := ui.PromptConfirm(fmt.Sprintf("Delete status mapping for %s?", projectKey), false)
 		if err != nil || !confirm {
-			ui.Info("Deletion cancelled")
+			log.Info("Deletion cancelled")
 			return
 		}
 
 		statusCache, err := jira.NewStatusCache()
 		if err != nil {
-			ui.Error(fmt.Sprintf("Failed to create status cache: %v", err))
+			log.Error("Failed to create status cache: %v", err)
 			return
 		}
 
 		if err := statusCache.DeleteProjectStatus(projectKey); err != nil {
-			ui.Error(fmt.Sprintf("Failed to delete mapping: %v", err))
+			log.Error("Failed to delete mapping: %v", err)
 			return
 		}
 
-		ui.Success(fmt.Sprintf("Status mapping deleted for project %s", projectKey))
+		log.Success("Status mapping deleted for project %s", projectKey)
 	},
 }
 
@@ -128,10 +128,9 @@ func init() {
 	jiraCmd.AddCommand(jiraExportCmd)
 	jiraCmd.AddCommand(jiraReadCmd)
 	jiraCmd.AddCommand(jiraCleanCmd)
-	
+
 	// Status mapping commands (existing)
 	jiraCmd.AddCommand(jiraListCmd)
 	jiraCmd.AddCommand(jiraSetupCmd)
 	jiraCmd.AddCommand(jiraDeleteCmd)
 }
-

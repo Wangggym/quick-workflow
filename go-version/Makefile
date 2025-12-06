@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 HIDE ?= @
 
-.PHONY: gen fix check dev run test test-cov test-fast build build-all install local quick clean help
+.PHONY: gen fix check dev run test test-cov test-fast build build-all install clean help
 
 # Variables
 BINARY_NAME := qkflow
@@ -89,22 +89,26 @@ build-all:
 	$(HIDE)GOOS=windows GOARCH=amd64 $(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-windows-amd64.exe ./cmd/qkflow
 	@echo "✅ Multi-platform builds completed."
 
-# Install to GOPATH/bin
+# Install to /usr/local/bin (system-wide, may require sudo) - matches install.sh behavior
 install: build
-	$(HIDE)echo "📦 Installing $(BINARY_NAME)..."
-	$(HIDE)cp $(BUILD_DIR)/$(BINARY_NAME) $(shell go env GOPATH)/bin/$(BINARY_NAME)
-	@echo "✅ Installed to $(shell go env GOPATH)/bin/$(BINARY_NAME)"
-
-# Quick local build and install (one-command)
-local: 
-	@echo "⚡ Quick build and install..."
-	@$(GO) build -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/qkflow
-	@cp $(BUILD_DIR)/$(BINARY_NAME) $(shell go env GOPATH)/bin/$(BINARY_NAME)
-	@echo "✅ Built and installed to $(shell go env GOPATH)/bin/$(BINARY_NAME)"
+	$(HIDE)echo "📦 Installing $(BINARY_NAME) to /usr/local/bin..."
+	@if [ ! -d "/usr/local/bin" ]; then \
+		echo "Creating /usr/local/bin directory..."; \
+		if [ -w "/usr/local" ]; then \
+			mkdir -p /usr/local/bin; \
+		else \
+			sudo mkdir -p /usr/local/bin; \
+		fi; \
+	fi
+	@if [ -w "/usr/local/bin" ]; then \
+		cp $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/$(BINARY_NAME); \
+		echo "✅ Installed to /usr/local/bin/$(BINARY_NAME)"; \
+	else \
+		echo "Requesting sudo permission to install to /usr/local/bin..."; \
+		sudo cp $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/$(BINARY_NAME); \
+		echo "✅ Installed to /usr/local/bin/$(BINARY_NAME)"; \
+	fi
 	@echo "💡 Run 'qkflow version' to verify"
-
-# Alias for local
-quick: local
 
 # Release helper
 release:
@@ -154,9 +158,7 @@ help:
 	@echo "Building:"
 	@echo "  make build        - Build binary"
 	@echo "  make build-all    - Build for all platforms"
-	@echo "  make install      - Install to GOPATH/bin"
-	@echo "  make local        - ⚡ Quick build and install (one-step)"
-	@echo "  make quick        - Alias for 'make local'"
+	@echo "  make install      - Install to /usr/local/bin (system-wide, requires sudo)"
 	@echo ""
 	@echo "Release:"
 	@echo "  make release      - Create release (requires VERSION env)"

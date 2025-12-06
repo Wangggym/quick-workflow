@@ -1,14 +1,12 @@
 package ui
 
 import (
-	"fmt"
-
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
 )
 
 var (
-	// 颜色定义
+	// 颜色定义（用于交互式 prompt）
 	Green   = color.New(color.FgGreen).SprintFunc()
 	Red     = color.New(color.FgRed).SprintFunc()
 	Yellow  = color.New(color.FgYellow).SprintFunc()
@@ -17,30 +15,16 @@ var (
 	Magenta = color.New(color.FgMagenta).SprintFunc()
 )
 
-// Success prints a success message
-func Success(message string) {
-	fmt.Printf("✅ %s\n", Green(message))
-}
-
-// Error prints an error message
-func Error(message string) {
-	fmt.Printf("❌ %s\n", Red(message))
-}
-
-// Warning prints a warning message
-func Warning(message string) {
-	fmt.Printf("⚠️  %s\n", Yellow(message))
-}
-
-// Info prints an info message
-func Info(message string) {
-	fmt.Printf("ℹ️  %s\n", Blue(message))
-}
-
 // PromptInput prompts for a text input
 func PromptInput(message string, required bool) (string, error) {
+	return PromptInputWithDefault(message, "", required)
+}
+
+// PromptInputWithDefault prompts for a text input with a default value
+func PromptInputWithDefault(message string, defaultValue string, required bool) (string, error) {
 	prompt := &survey.Input{
 		Message: message,
+		Default: defaultValue,
 	}
 
 	var result string
@@ -58,13 +42,33 @@ func PromptInput(message string, required bool) (string, error) {
 
 // PromptPassword prompts for a password input
 func PromptPassword(message string) (string, error) {
+	return PromptPasswordWithDefault(message, "")
+}
+
+// PromptPasswordWithDefault prompts for a password input with optional default value hint
+// Note: For security, we don't show the actual default value, but can use it if user presses Enter
+func PromptPasswordWithDefault(message string, defaultValue string) (string, error) {
 	prompt := &survey.Password{
 		Message: message,
 	}
 
 	var result string
-	if err := survey.AskOne(prompt, &result, survey.WithValidator(survey.Required)); err != nil {
+	var opts []survey.AskOpt
+
+	// If default value exists, make it optional (user can press Enter to use default)
+	if defaultValue != "" {
+		// We'll handle the default value logic after getting input
+	} else {
+		opts = append(opts, survey.WithValidator(survey.Required))
+	}
+
+	if err := survey.AskOne(prompt, &result, opts...); err != nil {
 		return "", err
+	}
+
+	// If user entered nothing and we have a default, use it
+	if result == "" && defaultValue != "" {
+		return defaultValue, nil
 	}
 
 	return result, nil
@@ -92,7 +96,7 @@ func PromptOptional(message string) (bool, error) {
 		"⏭️  Skip (default)",
 		"✅ Yes, continue",
 	}
-	
+
 	prompt := &survey.Select{
 		Message: message,
 		Options: options,
@@ -159,7 +163,7 @@ func ExtractPRType(option string) string {
 	if len(option) < 3 {
 		return option
 	}
-	
+
 	// 找到第一个冒号
 	for i, r := range option {
 		if r == ':' {
@@ -168,7 +172,6 @@ func ExtractPRType(option string) string {
 			}
 		}
 	}
-	
+
 	return option
 }
-

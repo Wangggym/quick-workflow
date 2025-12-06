@@ -5,27 +5,28 @@ import (
 	"time"
 
 	"github.com/Wangggym/quick-workflow/internal/jira"
+	"github.com/Wangggym/quick-workflow/internal/logger"
 )
 
 // Processor handles PR processing and Jira updates
 type Processor struct {
 	jiraClient  *jira.Client
 	statusCache *jira.StatusCache
-	logger      *Logger
+	logger      *logger.Logger
 }
 
 // NewProcessor creates a new Processor instance
-func NewProcessor(jiraClient *jira.Client, statusCache *jira.StatusCache, logger *Logger) *Processor {
+func NewProcessor(jiraClient *jira.Client, statusCache *jira.StatusCache, log *logger.Logger) *Processor {
 	return &Processor{
 		jiraClient:  jiraClient,
 		statusCache: statusCache,
-		logger:      logger,
+		logger:      log,
 	}
 }
 
 // ProcessMergedPR processes a merged PR and updates Jira
 func (p *Processor) ProcessMergedPR(pr MergedPR) ProcessedPR {
-	p.logger.Infof("Processing PR #%d: %s", pr.Number, pr.Title)
+	p.logger.Info("Processing PR #%d: %s", pr.Number, pr.Title)
 
 	jiraUpdates := make([]JiraUpdateResult, 0)
 
@@ -34,10 +35,10 @@ func (p *Processor) ProcessMergedPR(pr MergedPR) ProcessedPR {
 		jiraUpdates = append(jiraUpdates, updateResult)
 
 		if updateResult.Success {
-			p.logger.Successf("✅ PR #%d merged → Updated %s: %s → %s", 
+			p.logger.Success("✅ PR #%d merged → Updated %s: %s → %s",
 				pr.Number, ticket, updateResult.OldStatus, updateResult.NewStatus)
 		} else {
-			p.logger.Errorf("❌ PR #%d: Failed to update %s: %s", 
+			p.logger.Error("❌ PR #%d: Failed to update %s: %s",
 				pr.Number, ticket, updateResult.Error)
 		}
 	}
@@ -101,7 +102,7 @@ func (p *Processor) updateJiraTicket(ticket string) JiraUpdateResult {
 	if result.OldStatus == targetStatus {
 		result.NewStatus = targetStatus
 		result.Success = true
-		p.logger.Infof("Ticket %s already in status %s", ticket, targetStatus)
+		p.logger.Info("Ticket %s already in status %s", ticket, targetStatus)
 		return result
 	}
 
@@ -120,10 +121,10 @@ func (p *Processor) updateJiraTicket(ticket string) JiraUpdateResult {
 func (p *Processor) ProcessBatch(prs []MergedPR, state *State, watchingList *WatchingList) error {
 	for _, pr := range prs {
 		processedPR := p.ProcessMergedPR(pr)
-		
+
 		// Add to state
 		if err := state.AddProcessedPR(processedPR); err != nil {
-			p.logger.Errorf("Failed to save processed PR #%d: %v", pr.Number, err)
+			p.logger.Error("Failed to save processed PR #%d: %v", pr.Number, err)
 			continue
 		}
 
@@ -131,9 +132,9 @@ func (p *Processor) ProcessBatch(prs []MergedPR, state *State, watchingList *Wat
 		for _, watchingPR := range watchingList.GetAll() {
 			if watchingPR.PRNumber == pr.Number {
 				if err := watchingList.Remove(watchingPR.Owner, watchingPR.Repo, pr.Number); err != nil {
-					p.logger.Warningf("Failed to remove PR #%d from watching list: %v", pr.Number, err)
+					p.logger.Warning("Failed to remove PR #%d from watching list: %v", pr.Number, err)
 				} else {
-					p.logger.Infof("Removed PR #%d from watching list", pr.Number)
+					p.logger.Info("Removed PR #%d from watching list", pr.Number)
 				}
 				break
 			}
@@ -142,4 +143,3 @@ func (p *Processor) ProcessBatch(prs []MergedPR, state *State, watchingList *Wat
 
 	return nil
 }
-

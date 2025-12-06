@@ -1,11 +1,9 @@
 package commands
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"github.com/Wangggym/quick-workflow/internal/jira"
-	"github.com/Wangggym/quick-workflow/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -37,14 +35,14 @@ Examples:
 
 		// Validate issue key
 		if !jira.ValidateIssueKey(issueKey) {
-			ui.Error(fmt.Sprintf("Invalid issue key: %s", issueKey))
+			log.Error("Invalid issue key: %s", issueKey)
 			return
 		}
 
 		// Create Jira client
 		client, err := jira.NewClient()
 		if err != nil {
-			ui.Error(fmt.Sprintf("Failed to create Jira client: %v", err))
+			log.Error("Failed to create Jira client: %v", err)
 			return
 		}
 
@@ -59,63 +57,63 @@ Examples:
 		}
 
 		// Show progress
-		fmt.Printf("🔍 Fetching %s from Jira...\n", issueKey)
+		log.Info("🔍 Fetching %s from Jira...", issueKey)
 
 		// Export
 		result, err := exporter.Export(opts)
 		if err != nil {
-			ui.Error(fmt.Sprintf("Failed to export: %v", err))
+			log.Error("Failed to export: %v", err)
 			return
 		}
 
 		// Display results
-		fmt.Println()
-		ui.Success(fmt.Sprintf("Jira issue %s exported successfully!", issueKey))
-		fmt.Println()
-		fmt.Printf("📁 Location: %s/\n", result.ExportPath)
-		fmt.Printf("📄 Main content: %s\n", result.ContentFile)
+		log.Info("")
+		log.Success("Jira issue %s exported successfully!", issueKey)
+		log.Info("")
+		log.Info("📁 Location: %s/", result.ExportPath)
+		log.Info("📄 Main content: %s", result.ContentFile)
 
 		if exportWithImages && len(result.ImageFiles) > 0 {
-			fmt.Printf("🖼️  Images: %d files downloaded\n", len(result.ImageFiles))
-			fmt.Println()
-			fmt.Println("Downloaded files:")
+			log.Info("🖼️  Images: %d files downloaded", len(result.ImageFiles))
+			log.Info("")
+			log.Info("Downloaded files:")
 			for _, imgPath := range result.ImageFiles {
-				fmt.Printf("  - %s\n", filepath.Base(imgPath))
+				log.Info("  - %s", filepath.Base(imgPath))
 			}
 		}
 
 		// Display Cursor instructions
-		fmt.Println()
-		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-		fmt.Println("💡 How to use in Cursor:")
-		fmt.Println()
-		fmt.Println("1. In Cursor, attach the exported content:")
-		fmt.Printf("   @%s\n", result.ContentFile)
-		fmt.Println()
+		log.Info("")
+		log.Info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		log.Info("💡 How to use in Cursor:")
+		log.Info("")
+		log.Info("1. In Cursor, attach the exported content:")
+		log.Info("   @%s", result.ContentFile)
+		log.Info("")
 
 		if exportWithImages && len(result.ImageFiles) > 0 {
-			fmt.Println("2. To include images, tell Cursor:")
-			fmt.Printf("   \"Please read the images in %s/attachments/\"\n", result.ExportPath)
-			fmt.Println()
-			fmt.Println("3. Or simply tell Cursor:")
-			fmt.Printf("   \"Read the exported Jira ticket at %s/\"\n", result.ExportPath)
-			fmt.Println()
+			log.Info("2. To include images, tell Cursor:")
+			log.Info("   \"Please read the images in %s/attachments/\"", result.ExportPath)
+			log.Info("")
+			log.Info("3. Or simply tell Cursor:")
+			log.Info("   \"Read the exported Jira ticket at %s/\"", result.ExportPath)
+			log.Info("")
 		} else {
-			fmt.Println("2. Or simply tell Cursor:")
-			fmt.Printf("   \"Read %s\"\n", result.ContentFile)
-			fmt.Println()
+			log.Info("2. Or simply tell Cursor:")
+			log.Info("   \"Read %s\"", result.ContentFile)
+			log.Info("")
 		}
 
-		fmt.Println("4. When done, clean up:")
-		fmt.Printf("   qkflow jira clean %s\n", issueKey)
-		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-		fmt.Println()
+		log.Info("4. When done, clean up:")
+		log.Info("   qkflow jira clean %s", issueKey)
+		log.Info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		log.Info("")
 
 		// Show hint if images available but not downloaded
 		if !exportWithImages {
 			hasImages, _ := exporter.HasImages(issueKey)
 			if hasImages {
-				fmt.Println("💡 Tip: This issue has attachments. Use --with-images to download them.")
+				log.Info("💡 Tip: This issue has attachments. Use --with-images to download them.")
 			}
 		}
 	},
@@ -125,4 +123,3 @@ func init() {
 	jiraExportCmd.Flags().BoolVarP(&exportWithImages, "with-images", "i", false, "Download all attachments and images")
 	jiraExportCmd.Flags().StringVarP(&exportOutputDir, "output-dir", "o", "", "Output directory (default: /tmp/qkflow/jira/)")
 }
-

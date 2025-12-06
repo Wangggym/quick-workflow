@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wangggym/quick-workflow/pkg/config"
+	"github.com/Wangggym/quick-workflow/internal/config"
 )
 
 // Client represents an AI client for translation and optimization
@@ -87,7 +87,7 @@ func (c *Client) GeneratePRTitle(jiraSummary, prType, shortDesc string) (string,
 	if shortDesc != "" {
 		context = fmt.Sprintf("%s. Additional context: %s", jiraSummary, shortDesc)
 	}
-	
+
 	prompt := fmt.Sprintf(`You are a professional software engineer writing a GitHub PR title.
 Based on the following information, generate a concise PR title (max 60 characters).
 
@@ -113,12 +113,12 @@ Generate the PR title now:`, prType, context)
 	if err != nil {
 		return "", err
 	}
-	
+
 	// 确保标题不超过 60 个字符
 	if len(title) > 60 {
 		title = title[:57] + "..."
 	}
-	
+
 	return title, nil
 }
 
@@ -163,8 +163,8 @@ func (c *Client) TranslateAndOptimize(title string) (*TranslationResult, error) 
 
 // translateTitle translates a Chinese title to English
 func (c *Client) translateTitle(title string) (string, error) {
-	prompt := fmt.Sprintf(`You are a professional translator for software development. 
-Translate the following Jira issue title from Chinese to English. 
+	prompt := fmt.Sprintf(`You are a professional translator for software development.
+Translate the following Jira issue title from Chinese to English.
 Make it concise, clear, and suitable for a GitHub PR title.
 Keep technical terms in English if they already exist in the original text.
 Only return the translated title, nothing else.
@@ -176,7 +176,7 @@ Title: %s`, title)
 
 // optimizeTitle optimizes an English title
 func (c *Client) optimizeTitle(title string) (string, error) {
-	prompt := fmt.Sprintf(`You are a professional software engineer. 
+	prompt := fmt.Sprintf(`You are a professional software engineer.
 Optimize the following PR title to be more concise and clear.
 Follow conventional commit format if applicable (feat:, fix:, docs:, etc.).
 Only return the optimized title, nothing else.

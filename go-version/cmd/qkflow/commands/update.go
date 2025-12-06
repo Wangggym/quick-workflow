@@ -1,11 +1,9 @@
 package commands
 
 import (
-	"fmt"
 
 	"github.com/Wangggym/quick-workflow/internal/git"
 	"github.com/Wangggym/quick-workflow/internal/github"
-	"github.com/Wangggym/quick-workflow/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -26,30 +24,30 @@ If no PR is found, it will use "update" as the default commit message.`,
 func runUpdate(cmd *cobra.Command, args []string) {
 	// 检查是否是 git 仓库
 	if !git.IsGitRepository() {
-		ui.Error("Not a git repository")
+		log.Error("Not a git repository")
 		return
 	}
 
 	// 检查是否有未提交的更改
 	hasChanges, err := git.HasUncommittedChanges()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to check git status: %v", err))
+		log.Error("Failed to check git status: %v", err)
 		return
 	}
 
 	if !hasChanges {
-		ui.Warning("No changes to commit")
+		log.Warning("No changes to commit")
 		return
 	}
 
 	// 获取当前分支
 	branch, err := git.GetCurrentBranch()
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to get current branch: %v", err))
+		log.Error("Failed to get current branch: %v", err)
 		return
 	}
 
-	ui.Info(fmt.Sprintf("Current branch: %s", branch))
+	log.Info("Current branch: %s", branch)
 
 	// 获取 PR 标题作为 commit message
 	commitMessage := "update" // 默认 commit message
@@ -66,37 +64,37 @@ func runUpdate(cmd *cobra.Command, args []string) {
 				pr, err := ghClient.GetPRByBranch(owner, repo, branch)
 				if err == nil && pr != nil {
 					commitMessage = pr.Title
-					ui.Success(fmt.Sprintf("Got PR title: %s", commitMessage))
+					log.Success("Got PR title: %s", commitMessage)
 				} else {
-					ui.Warning(fmt.Sprintf("No open PR found for branch %s, using default message 'update'", branch))
+					log.Warning("No open PR found for branch %s, using default message 'update'", branch)
 				}
 			} else {
-				ui.Warning(fmt.Sprintf("Failed to create GitHub client: %v, using default message", err))
+				log.Warning("Failed to create GitHub client: %v, using default message", err)
 			}
 		}
 	}
 
 	// Stage all changes
-	ui.Info("Staging all changes...")
+	log.Info("Staging all changes...")
 	if err := git.AddAll(); err != nil {
-		ui.Error(fmt.Sprintf("Failed to stage changes: %v", err))
+		log.Error("Failed to stage changes: %v", err)
 		return
 	}
 
 	// Commit
-	ui.Info(fmt.Sprintf("Committing with message: '%s'", commitMessage))
+	log.Info("Committing with message: '%s'", commitMessage)
 	if err := git.Commit(commitMessage); err != nil {
-		ui.Error(fmt.Sprintf("Failed to commit: %v", err))
+		log.Error("Failed to commit: %v", err)
 		return
 	}
 
 	// Push
-	ui.Info("Pushing to origin...")
+	log.Info("Pushing to origin...")
 	if err := git.Push(branch); err != nil {
-		ui.Error(fmt.Sprintf("Failed to push: %v", err))
+		log.Error("Failed to push: %v", err)
 		return
 	}
 
-	ui.Success("✅ Successfully committed and pushed changes!")
+	log.Success("✅ Successfully committed and pushed changes!")
 }
 

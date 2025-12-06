@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/Wangggym/quick-workflow/internal/jira"
-	"github.com/Wangggym/quick-workflow/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -29,14 +28,14 @@ Examples:
 
 		// Validate issue key
 		if !jira.ValidateIssueKey(issueKey) {
-			ui.Error(fmt.Sprintf("Invalid issue key: %s", issueKey))
+			log.Error("Invalid issue key: %s", issueKey)
 			return
 		}
 
 		// Create Jira client
 		client, err := jira.NewClient()
 		if err != nil {
-			ui.Error(fmt.Sprintf("Failed to create Jira client: %v", err))
+			log.Error("Failed to create Jira client: %v", err)
 			return
 		}
 
@@ -47,7 +46,7 @@ Examples:
 			// Get detailed issue
 			issue, err := client.GetIssueDetailed(issueKey)
 			if err != nil {
-				ui.Error(fmt.Sprintf("Failed to get issue: %v", err))
+				log.Error("Failed to get issue: %v", err)
 				return
 			}
 
@@ -58,7 +57,7 @@ Examples:
 			// Get basic issue
 			issue, err := client.GetIssue(issueKey)
 			if err != nil {
-				ui.Error(fmt.Sprintf("Failed to get issue: %v", err))
+				log.Error("Failed to get issue: %v", err)
 				return
 			}
 

@@ -1,71 +1,71 @@
-# Contributing to Quick Workflow
+# 贡献指南
 
-Thank you for your interest in contributing to Quick Workflow! 🎉
+感谢你对 Quick Workflow 项目的贡献兴趣！🎉
 
-## 🚀 Quick Start
+## 🚀 快速开始
 
-1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/quick-workflow.git`
-3. Create a branch: `git checkout -b feature/amazing-feature`
-4. Make your changes
-5. Test your changes: `make test`
-6. Commit: `git commit -m "Add amazing feature"`
-7. Push: `git push origin feature/amazing-feature`
-8. Open a Pull Request
+1. Fork 仓库
+2. 克隆你的 Fork：`git clone https://github.com/YOUR_USERNAME/quick-workflow.git`
+3. 创建分支：`git checkout -b feature/amazing-feature`
+4. 进行更改
+5. 测试更改：`make test`
+6. 提交：`git commit -m "Add amazing feature"`
+7. 推送：`git push origin feature/amazing-feature`
+8. 打开 Pull Request
 
-## 🏗️ Development Setup
+## 🏗️ 开发环境设置
 
-### Prerequisites
+### 前置要求
 
-- Go 1.21 or higher
+- Go 1.21 或更高版本
 - Make
 - Git
-- GitHub CLI (`gh`) for testing
-- Jira account for integration testing (optional)
+- GitHub CLI (`gh`) 用于测试
+- Jira 账户用于集成测试（可选）
 
-### Local Setup
+### 本地设置
 
 ```bash
-# Clone the repository
+# 克隆仓库
 git clone https://github.com/Wangggym/quick-workflow.git
 cd quick-workflow/go-version
 
-# Install dependencies
+# 安装依赖
 make deps
 
-# Build
+# 构建
 make build
 
-# Run tests
+# 运行测试
 make test
 
-# Run linters
+# 运行代码检查
 make lint
 ```
 
-## 📝 Code Style
+## 📝 代码风格
 
-### Go Code
+### Go 代码
 
-- Follow [Effective Go](https://golang.org/doc/effective_go.html)
-- Use `gofmt` to format code (run `make fmt`)
-- Keep functions small and focused
-- Write meaningful variable names
-- Add comments for exported functions and types
+- 遵循 [Effective Go](https://golang.org/doc/effective_go.html)
+- 使用 `gofmt` 格式化代码（运行 `make fmt`）
+- 保持函数小而专注
+- 使用有意义的变量名
+- 为导出的函数和类型添加注释
 
-### Commit Messages
+### 提交信息
 
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
+遵循 [Conventional Commits](https://www.conventionalcommits.org/) 规范：
 
-- `feat:` New feature
-- `fix:` Bug fix
-- `docs:` Documentation changes
-- `style:` Code style changes (formatting, etc.)
-- `refactor:` Code refactoring
-- `test:` Adding or updating tests
-- `chore:` Maintenance tasks
+- `feat:` 新功能
+- `fix:` Bug 修复
+- `docs:` 文档更改
+- `style:` 代码风格更改（格式化等）
+- `refactor:` 代码重构
+- `test:` 添加或更新测试
+- `chore:` 维护任务
 
-Examples:
+示例：
 ```
 feat: add support for GitLab integration
 fix: handle empty Jira ticket gracefully
@@ -73,33 +73,33 @@ docs: update installation instructions
 test: add tests for GitHub client
 ```
 
-## 🧪 Testing
+## 🧪 测试
 
-### Running Tests
+### 运行测试
 
 ```bash
-# Run all tests
+# 运行所有测试
 make test
 
-# Run specific package tests
+# 运行特定包的测试
 go test ./internal/github/...
 go test ./internal/jira/...
 
-# Run with coverage
+# 运行测试并生成覆盖率报告
 make coverage
 
-# Run with race detector
+# 使用竞态检测器运行测试
 go test -race ./...
 ```
 
-### Writing Tests
+### 编写测试
 
-- Place tests in `*_test.go` files
-- Use table-driven tests for multiple test cases
-- Mock external dependencies (GitHub API, Jira API)
-- Test both success and error cases
+- 将测试放在 `*_test.go` 文件中
+- 对多个测试用例使用表驱动测试
+- 模拟外部依赖（GitHub API、Jira API）
+- 测试成功和错误两种情况
 
-Example:
+示例：
 ```go
 func TestSanitizeBranchName(t *testing.T) {
     tests := []struct {
@@ -123,128 +123,128 @@ func TestSanitizeBranchName(t *testing.T) {
 }
 ```
 
-## 📚 Documentation
+## 📚 文档
 
-- Update README.md for user-facing changes
-- Update MIGRATION.md for migration-related changes
-- Add godoc comments for exported types and functions
-- Update CHANGELOG.md (we'll add this)
+- 为用户面向的更改更新 README.md
+- 为迁移相关更改更新 MIGRATION.md
+- 为导出的类型和函数添加 godoc 注释
+- 更新 CHANGELOG.md
 
-## 🐛 Bug Reports
+## 🐛 Bug 报告
 
-When reporting bugs, please include:
+报告 Bug 时，请包含：
 
-1. **Description**: Clear description of the issue
-2. **Steps to Reproduce**: Detailed steps
-3. **Expected Behavior**: What should happen
-4. **Actual Behavior**: What actually happens
-5. **Environment**:
-   - OS and version
-   - Go version
-   - qk version (`qk version`)
-6. **Logs**: Any relevant error messages
+1. **描述**：问题的清晰描述
+2. **复现步骤**：详细步骤
+3. **预期行为**：应该发生什么
+4. **实际行为**：实际发生了什么
+5. **环境信息**：
+   - 操作系统和版本
+   - Go 版本
+   - qkflow 版本（`qkflow version`）
+6. **日志**：任何相关的错误消息
 
-Use the bug report template when creating an issue.
+创建 Issue 时请使用 Bug 报告模板。
 
-## 💡 Feature Requests
+## 💡 功能请求
 
-When requesting features:
+请求功能时：
 
-1. **Use Case**: Describe the problem you're trying to solve
-2. **Proposed Solution**: Your idea for solving it
-3. **Alternatives**: Other solutions you've considered
-4. **Additional Context**: Any other relevant information
+1. **使用场景**：描述你试图解决的问题
+2. **提议的解决方案**：你的解决思路
+3. **替代方案**：你考虑过的其他解决方案
+4. **额外上下文**：任何其他相关信息
 
-## 🔍 Code Review
+## 🔍 代码审查
 
-All submissions require review. We use GitHub Pull Requests for this purpose.
+所有提交都需要审查。我们使用 GitHub Pull Requests 进行代码审查。
 
-### PR Checklist
+### PR 检查清单
 
-Before submitting a PR, ensure:
+提交 PR 前，请确保：
 
-- [ ] Tests pass (`make test`)
-- [ ] Linters pass (`make lint`)
-- [ ] Code is formatted (`make fmt`)
-- [ ] Documentation is updated
-- [ ] Commit messages follow conventions
-- [ ] PR description explains the changes
-- [ ] No sensitive information (tokens, passwords) in code
+- [ ] 测试通过（`make test`）
+- [ ] 代码检查通过（`make lint`）
+- [ ] 代码已格式化（`make fmt`）
+- [ ] 文档已更新
+- [ ] 提交信息遵循规范
+- [ ] PR 描述说明了更改内容
+- [ ] 代码中没有敏感信息（令牌、密码等）
 
-### PR Review Process
+### PR 审查流程
 
-1. Automated checks run (tests, linters)
-2. Maintainer reviews code
-3. Requested changes are addressed
-4. PR is approved and merged
+1. 自动检查运行（测试、代码检查）
+2. 维护者审查代码
+3. 处理请求的更改
+4. PR 被批准并合并
 
-## 🏷️ Issue Labels
+## 🏷️ Issue 标签
 
-- `bug`: Something isn't working
-- `enhancement`: New feature or request
-- `documentation`: Documentation improvements
-- `good first issue`: Good for newcomers
-- `help wanted`: Extra attention needed
-- `question`: Further information requested
+- `bug`：某些功能不工作
+- `enhancement`：新功能或请求
+- `documentation`：文档改进
+- `good first issue`：适合新手的任务
+- `help wanted`：需要额外关注
+- `question`：需要更多信息
 
-## 📋 Project Structure
+## 📋 项目结构
 
 ```
 go-version/
-├── cmd/qkflow/              # Main application entry point
+├── cmd/qkflow/              # 主应用程序入口点
 │   ├── main.go
-│   └── commands/        # CLI commands
-├── internal/            # Internal packages
-│   ├── github/          # GitHub client
-│   ├── jira/            # Jira client
-│   ├── git/             # Git operations
-│   └── ui/              # User interface
-├── pkg/                 # Public packages
-│   └── config/          # Configuration management
-├── scripts/             # Build and release scripts
-└── docs/                # Additional documentation
+│   └── commands/        # CLI 命令
+├── internal/            # 内部包
+│   ├── github/          # GitHub 客户端
+│   ├── jira/            # Jira 客户端
+│   ├── git/             # Git 操作
+│   └── ui/              # 用户界面
+├── pkg/                 # 公共包
+│   └── config/          # 配置管理
+├── scripts/             # 构建和发布脚本
+└── docs/                # 额外文档
 ```
 
-## 🎯 Areas for Contribution
+## 🎯 贡献领域
 
-We welcome contributions in these areas:
+我们欢迎在这些领域的贡献：
 
-### High Priority
-- [ ] Windows support improvements
-- [ ] GitLab support
-- [ ] Bitbucket support
-- [ ] More comprehensive tests
-- [ ] Performance optimizations
+### 高优先级
+- [ ] Windows 支持改进
+- [ ] GitLab 支持
+- [ ] Bitbucket 支持
+- [ ] 更全面的测试
+- [ ] 性能优化
 
-### Medium Priority
-- [ ] Configuration validation
-- [ ] Better error messages
-- [ ] Template support for PR bodies
-- [ ] Custom workflows
-- [ ] Integration with other issue trackers
+### 中优先级
+- [ ] 配置验证
+- [ ] 更好的错误消息
+- [ ] PR 正文模板支持
+- [ ] 自定义工作流
+- [ ] 与其他问题跟踪器的集成
 
-### Documentation
-- [ ] Video tutorials
-- [ ] More examples
-- [ ] Troubleshooting guide
-- [ ] API documentation
+### 文档
+- [ ] 视频教程
+- [ ] 更多示例
+- [ ] 故障排除指南
+- [ ] API 文档
 
-## 🤝 Community
+## 🤝 社区
 
-- **Discussions**: Use GitHub Discussions for questions and ideas
-- **Issues**: Report bugs and request features
-- **PRs**: Submit code contributions
-- **Code of Conduct**: Be respectful and inclusive
+- **讨论**：使用 GitHub Discussions 提问和分享想法
+- **Issues**：报告 Bug 和请求功能
+- **PRs**：提交代码贡献
+- **行为准则**：保持尊重和包容
 
-## 📄 License
+## 📄 许可证
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+通过贡献，你同意你的贡献将在 MIT 许可证下授权。
 
-## 🙏 Thank You!
+## 🙏 感谢！
 
-Your contributions make Quick Workflow better for everyone. Thank you for taking the time to contribute!
+你的贡献让 Quick Workflow 对每个人都更好。感谢你花时间贡献！
 
 ---
 
-If you have questions, feel free to open an issue or start a discussion.
+如有问题，请随时打开 Issue 或开始讨论。
 
