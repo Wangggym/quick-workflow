@@ -145,6 +145,46 @@ func (l *Logger) Success(format string, args ...interface{}) {
 	l.Logger.Info(formatMessage(format, args...), "type", "success")
 }
 
+// Separator logs a separator line (maps to Info level with separator context)
+// Usage:
+//
+//	log.Separator()                    // Default: outputs a blank line only
+//	log.Separator(65)                  // Outputs blank line + separator (65 dashes)
+//	log.Separator(40, '-')             // Outputs blank line + separator (40 dashes with custom character)
+func (l *Logger) Separator(args ...interface{}) {
+	// Default: just output a blank line
+	if len(args) == 0 {
+		l.Logger.Info("")
+		return
+	}
+
+	// Parse arguments for separator line
+	length := 65
+	char := '─'
+
+	if l, ok := args[0].(int); ok {
+		length = l
+	}
+	if len(args) > 1 {
+		if c, ok := args[1].(rune); ok {
+			char = c
+		} else if s, ok := args[1].(string); ok && len(s) > 0 {
+			char = rune(s[0])
+		}
+	}
+
+	// Output a blank line before separator
+	l.Logger.Info("")
+
+	// Create separator line
+	separator := ""
+	for i := 0; i < length; i++ {
+		separator += string(char)
+	}
+
+	l.Logger.Info(separator, "type", "separator")
+}
+
 // Debug logs a debug message with optional formatting
 // Usage:
 //

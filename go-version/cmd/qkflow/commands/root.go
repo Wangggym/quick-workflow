@@ -130,9 +130,6 @@ var configCmd = &cobra.Command{
 		if cfg.GitHubOwner != "" {
 			log.Info("  Owner: %s", cfg.GitHubOwner)
 		}
-		if cfg.GitHubRepo != "" {
-			log.Info("  Repo: %s", cfg.GitHubRepo)
-		}
 
 		log.Info("")
 		log.Info("📋 Jira:")

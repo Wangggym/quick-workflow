@@ -129,8 +129,9 @@ func newUILogger(level Level) *Logger {
 		Level:     level,
 		AddSource: false,
 	})
+	// Note: handler is already initialized with the correct level in NewUIHandler,
+	// so we don't need to call SetLevel() again to avoid deadlock
 	logger := New(handler)
-	logger.SetLevel(level)
 	return logger
 }
 
@@ -173,7 +174,8 @@ func newFileLogger(filePath string, level Level, json bool) (*Logger, error) {
 	// FileHandler now implements io.Closer and will flush buffer and close file
 	logger.handlers = append(logger.handlers, handler)
 	logger.mu.Unlock()
-	logger.SetLevel(level)
+	// Note: handler is already initialized with the correct level in NewFileHandler,
+	// so we don't need to call SetLevel() again to avoid deadlock
 
 	return logger, nil
 }
@@ -200,7 +202,9 @@ func newMultiLogger(filePath string, level Level, json bool) (*Logger, error) {
 	// FileHandler now implements io.Closer and will flush buffer and close file
 	logger.handlers = append(logger.handlers, fileHandler)
 	logger.mu.Unlock()
-	logger.SetLevel(level)
+	// Note: Both uiHandler and fileHandler are already initialized with the correct level
+	// in their constructors (NewUIHandler and NewFileHandler), so we don't need to call
+	// SetLevel() again to avoid deadlock
 
 	return logger, nil
 }

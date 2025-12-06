@@ -10,18 +10,28 @@ import (
 
 // Config holds all configuration for the application
 type Config struct {
-	Email              string `mapstructure:"email"`
-	JiraAPIToken       string `mapstructure:"jira_api_token"`
+	// Git 账号配置
+	GitHubToken  string `mapstructure:"github_token"`
+	GitHubOwner  string `mapstructure:"github_owner"`
+	BranchPrefix string `mapstructure:"branch_prefix"`
+
+	// Jira 账号配置
+	Email              string `mapstructure:"email"` // Jira email
 	JiraServiceAddress string `mapstructure:"jira_service_address"`
-	GitHubToken        string `mapstructure:"github_token"`
-	GitHubOwner        string `mapstructure:"github_owner"`
-	GitHubRepo         string `mapstructure:"github_repo"`
-	BranchPrefix       string `mapstructure:"branch_prefix"`
-	OpenAIKey          string `mapstructure:"openai_key"`
-	DeepSeekKey        string `mapstructure:"deepseek_key"`
-	OpenAIProxyURL     string `mapstructure:"openai_proxy_url"`
-	OpenAIProxyKey     string `mapstructure:"openai_proxy_key"`
-	AutoUpdate         bool   `mapstructure:"auto_update"`
+	JiraAPIToken       string `mapstructure:"jira_api_token"`
+
+	// LLM 配置
+	OpenAIKey      string `mapstructure:"openai_key"`
+	DeepSeekKey    string `mapstructure:"deepseek_key"`
+	OpenAIProxyURL string `mapstructure:"openai_proxy_url"`
+	OpenAIProxyKey string `mapstructure:"openai_proxy_key"`
+
+	// Log 配置
+	LogFilePath *string `mapstructure:"log_file_path"` // nil 表示未设置
+	LogLevel    *string `mapstructure:"log_level"`     // nil 表示未设置
+
+	// 自动更新
+	AutoUpdate bool `mapstructure:"auto_update"`
 }
 
 var globalConfig *Config
@@ -55,7 +65,6 @@ func Load() (*Config, error) {
 	// 绑定环境变量（支持常用的环境变量名）
 	viper.BindEnv("github_token", "GITHUB_TOKEN", "GH_TOKEN")
 	viper.BindEnv("github_owner", "GITHUB_OWNER")
-	viper.BindEnv("github_repo", "GITHUB_REPO")
 	viper.BindEnv("jira_api_token", "JIRA_API_TOKEN")
 	viper.BindEnv("jira_service_address", "JIRA_SERVICE_ADDRESS")
 	viper.BindEnv("branch_prefix", "GH_BRANCH_PREFIX")
@@ -64,6 +73,8 @@ func Load() (*Config, error) {
 	viper.BindEnv("openai_proxy_url", "OPENAI_PROXY_URL")
 	viper.BindEnv("openai_proxy_key", "OPENAI_PROXY_KEY")
 	viper.BindEnv("email", "EMAIL")
+	viper.BindEnv("log_file_path", "QKFLOW_LOG_FILE", "LOG_FILE_PATH")
+	viper.BindEnv("log_level", "QKFLOW_LOG_LEVEL", "LOG_LEVEL")
 	viper.BindEnv("auto_update", "AUTO_UPDATE")
 
 	// 尝试读取配置文件
@@ -107,17 +118,37 @@ func Save(cfg *Config) error {
 	configFile := filepath.Join(configDir, "config.yaml")
 
 	// 设置值
-	viper.Set("email", cfg.Email)
-	viper.Set("jira_api_token", cfg.JiraAPIToken)
-	viper.Set("jira_service_address", cfg.JiraServiceAddress)
+	// Git 账号配置
 	viper.Set("github_token", cfg.GitHubToken)
 	viper.Set("github_owner", cfg.GitHubOwner)
-	viper.Set("github_repo", cfg.GitHubRepo)
 	viper.Set("branch_prefix", cfg.BranchPrefix)
+
+	// Jira 账号配置
+	viper.Set("email", cfg.Email)
+	viper.Set("jira_service_address", cfg.JiraServiceAddress)
+	viper.Set("jira_api_token", cfg.JiraAPIToken)
+
+	// LLM 配置
 	viper.Set("openai_key", cfg.OpenAIKey)
 	viper.Set("deepseek_key", cfg.DeepSeekKey)
 	viper.Set("openai_proxy_url", cfg.OpenAIProxyURL)
 	viper.Set("openai_proxy_key", cfg.OpenAIProxyKey)
+
+	// Log 配置
+	if cfg.LogFilePath != nil {
+		viper.Set("log_file_path", *cfg.LogFilePath)
+	} else {
+		// 如果为 nil，删除这个键，避免在 YAML 中显示 null
+		viper.Set("log_file_path", nil)
+	}
+	if cfg.LogLevel != nil {
+		viper.Set("log_level", *cfg.LogLevel)
+	} else {
+		// 如果为 nil，删除这个键，避免在 YAML 中显示 null
+		viper.Set("log_level", nil)
+	}
+
+	// 自动更新
 	viper.Set("auto_update", cfg.AutoUpdate)
 
 	// 写入文件
@@ -157,6 +188,7 @@ func IsConfigured() bool {
 
 func setDefaults() {
 	viper.SetDefault("branch_prefix", "")
+	// LogFilePath 和 LogLevel 默认为 nil（不设置默认值）
 	viper.SetDefault("auto_update", true) // 默认启用自动更新
 }
 

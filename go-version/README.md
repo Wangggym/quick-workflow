@@ -83,7 +83,8 @@ go install github.com/Wangggym/quick-workflow/cmd/qkflow@latest
 git clone https://github.com/Wangggym/quick-workflow.git
 cd quick-workflow/go-version
 make build
-sudo cp bin/qkflow /usr/local/bin/
+make install  # 安装到 /usr/local/bin (需要 sudo)
+# 或使用快速安装: make local
 ```
 
 ---

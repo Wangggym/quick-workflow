@@ -18,10 +18,10 @@ func ExampleNewLogger_ui() {
 	log.Debug("这是调试信息（默认不显示）")
 
 	// Output:
-	// ℹ️ 这是一条信息
-	// ✅ 操作成功
-	// ⚠️ 这是一条警告
-	// ❌ 这是一条错误
+	// ℹ 这是一条信息
+	// ✓ 操作成功
+	// ⚠ 这是一条警告
+	// ✗ 这是一条错误
 }
 
 // ExampleNewLogger_file demonstrates how to create a file logger

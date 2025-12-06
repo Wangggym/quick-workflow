@@ -490,8 +490,7 @@ func runWatchStatus(cmd *cobra.Command, args []string) {
 	if cfg != nil {
 		log.Info("")
 		log.Info("📋 Configuration:")
-		log.Info("  Repository: %s/%s", cfg.GitHubOwner, cfg.GitHubRepo)
-		log.Info("  Author: %s (only your PRs)", cfg.GitHubOwner)
+		log.Info("  Owner: %s (only your PRs)", cfg.GitHubOwner)
 		log.Info("  Check Interval: 15 minutes (daytime)")
 		log.Info("  Night Checks: 02:00, 06:00")
 		log.Info("  Log Retention: 7 days")

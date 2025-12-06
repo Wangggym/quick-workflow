@@ -11,7 +11,8 @@ import (
 )
 
 // UIHandler is a custom handler for interactive CLI output
-// It provides colored output with emoji for better UX
+// It provides colored output with icons for better UX
+// Icons are consistent with the Rust version: ✓ ✗ ⚠ ℹ ⚙
 type UIHandler struct {
 	writer  io.Writer
 	opts    *HandlerOptions
@@ -55,6 +56,13 @@ func (h *UIHandler) Enabled(ctx context.Context, level slog.Level) bool {
 // Handle handles a log record
 func (h *UIHandler) Handle(ctx context.Context, record slog.Record) error {
 	if !h.Enabled(ctx, record.Level) {
+		return nil
+	}
+
+	// Check if this is a separator message
+	if h.isSeparatorMessage(record) {
+		// For separator, just print the message directly without emoji/color
+		fmt.Fprintf(h.writer, "%s\n", record.Message)
 		return nil
 	}
 
@@ -114,22 +122,36 @@ func (h *UIHandler) isSuccessMessage(record slog.Record) bool {
 	return isSuccess
 }
 
-// getEmojiAndColor returns the appropriate emoji and color function for the log record
+// isSeparatorMessage checks if the record represents a separator message
+func (h *UIHandler) isSeparatorMessage(record slog.Record) bool {
+	isSeparator := false
+	record.Attrs(func(a slog.Attr) bool {
+		if a.Key == "type" && a.Value.String() == "separator" {
+			isSeparator = true
+			return false // Stop iteration
+		}
+		return true
+	})
+	return isSeparator
+}
+
+// getEmojiAndColor returns the appropriate icon and color function for the log record
+// Uses the same icons as the Rust version for consistency: ✓ ✗ ⚠ ℹ ⚙
 func (h *UIHandler) getEmojiAndColor(record slog.Record) (string, func(format string, a ...interface{}) string) {
 	switch record.Level {
 	case slog.LevelDebug:
-		return "🔍", color.New(color.FgCyan).SprintfFunc()
+		return "⚙", color.New(color.FgHiBlack).SprintfFunc()
 	case slog.LevelInfo:
 		if h.isSuccessMessage(record) {
-			return "✅", color.New(color.FgGreen).SprintfFunc()
+			return "✓", color.New(color.FgGreen).SprintfFunc()
 		}
-		return "ℹ️", color.New(color.FgBlue).SprintfFunc()
+		return "ℹ", color.New(color.FgBlue).SprintfFunc()
 	case slog.LevelWarn:
-		return "⚠️", color.New(color.FgYellow).SprintfFunc()
+		return "⚠", color.New(color.FgYellow).SprintfFunc()
 	case slog.LevelError:
-		return "❌", color.New(color.FgRed).SprintfFunc()
+		return "✗", color.New(color.FgRed).SprintfFunc()
 	default:
-		return "ℹ️", color.New(color.FgBlue).SprintfFunc()
+		return "ℹ", color.New(color.FgBlue).SprintfFunc()
 	}
 }
 

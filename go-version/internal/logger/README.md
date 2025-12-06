@@ -440,8 +440,8 @@ log, err := logger.NewLogger(&logger.LoggerOptions{
 
 #### UI Handler（交互式输出）
 
-- 带颜色和 emoji
-- 格式：`✅ 操作成功`、`❌ 错误信息`、`⚠️ 警告信息`、`ℹ️ 一般信息`
+- 带颜色和图标（与 Rust 版本保持一致）
+- 格式：`✓ 操作成功`、`✗ 错误信息`、`⚠ 警告信息`、`ℹ 一般信息`、`⚙ 调试信息`
 
 #### File Handler（文件输出）
 
