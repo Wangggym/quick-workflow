@@ -149,10 +149,11 @@ func (c *Client) GetPullRequest(owner, repo string, number int) (*PullRequest, e
 	}, nil
 }
 
-// MergePullRequest merges a pull request
+// MergePullRequest merges a pull request using squash merge by default
 func (c *Client) MergePullRequest(owner, repo string, number int, commitMessage string) error {
 	options := &github.PullRequestOptions{
 		CommitTitle: commitMessage,
+		MergeMethod: "squash", // Use squash merge by default
 	}
 
 	_, _, err := c.client.PullRequests.Merge(c.ctx, owner, repo, number, commitMessage, options)
@@ -238,10 +239,10 @@ func ParsePRFromURL(url string) (owner, repo string, prNumber int, err error) {
 
 	owner = parts[0]
 	repo = parts[1]
-	
+
 	// 解析 PR 号（parts[3] 可能后面还有 /files, /commits 等）
 	prStr := parts[3]
-	
+
 	prNumber, err = strconv.Atoi(prStr)
 	if err != nil {
 		return "", "", 0, fmt.Errorf("invalid PR number in URL: %s", prStr)
