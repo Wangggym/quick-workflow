@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/Wangggym/quick-workflow/internal/ai"
 	"github.com/Wangggym/quick-workflow/internal/editor"
@@ -35,6 +36,13 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 	// 检查是否在 Git 仓库中
 	if !git.IsGitRepository() {
 		ui.Error("Not a git repository")
+		return
+	}
+
+	// 记录原始分支，以便失败时回退
+	originalBranch, err := git.GetCurrentBranch()
+	if err != nil {
+		ui.Error(fmt.Sprintf("Failed to get current branch: %v", err))
 		return
 	}
 
@@ -124,7 +132,7 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 		if len(selectedTypes) > 0 {
 			prType = ui.ExtractPRType(selectedTypes[0])
 		}
-		
+
 		// 使用 AI 生成简洁的 PR 标题
 		aiClient, err := ai.NewClient()
 		if err == nil && prType != "" {
@@ -188,7 +196,7 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 		// 无 Jira ticket 时，添加 # 前缀
 		commitMessage = fmt.Sprintf("# %s", title)
 	}
-	
+
 	ui.Info("Committing changes...")
 	if err := git.Commit(commitMessage); err != nil {
 		ui.Error(fmt.Sprintf("Failed to commit: %v", err))
@@ -228,6 +236,7 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 	ghClient, err := github.NewClient()
 	if err != nil {
 		ui.Error(fmt.Sprintf("Failed to create GitHub client: %v", err))
+		rollbackBranch(originalBranch, branchName)
 		return
 	}
 
@@ -240,8 +249,26 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 		Base:  defaultBranch,
 	})
 	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to create PR: %v", err))
-		return
+		// 重试一次
+		ui.Warning(fmt.Sprintf("Failed to create PR: %v", err))
+		ui.Info("Retrying in 3 seconds...")
+		time.Sleep(3 * time.Second)
+
+		ui.Info("Retrying to create pull request...")
+		pr, err = ghClient.CreatePullRequest(github.CreatePullRequestInput{
+			Owner: owner,
+			Repo:  repo,
+			Title: commitMessage,
+			Body:  prBody,
+			Head:  branchName,
+			Base:  defaultBranch,
+		})
+		if err != nil {
+			ui.Error(fmt.Sprintf("Retry failed: %v", err))
+			ui.Info("Rolling back changes...")
+			rollbackBranch(originalBranch, branchName)
+			return
+		}
 	}
 
 	ui.Success(fmt.Sprintf("Pull request created: %s", pr.HTMLURL))
@@ -249,7 +276,7 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 	// 处理编辑器内容（上传文件并添加评论）
 	if editorResult != nil && (editorResult.Content != "" || len(editorResult.Files) > 0) {
 		ui.Info("Processing description and files...")
-		
+
 		// 创建 Jira 客户端（如果需要）
 		var jiraClient *jira.Client
 		if jiraTicket != "" && jira.ValidateIssueKey(jiraTicket) {
@@ -338,8 +365,8 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 			}
 
 			// 更新状态
-				projectKey := jira.ExtractProjectKey(jiraTicket)
-			
+			projectKey := jira.ExtractProjectKey(jiraTicket)
+
 			// 检查状态缓存
 			statusCache, err := jira.NewStatusCache()
 			if err != nil {
@@ -363,7 +390,7 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 						}
 					}
 				}
-				
+
 				// 使用缓存的状态更新
 				if mapping != nil && mapping.PRCreatedStatus != "" {
 					ui.Info(fmt.Sprintf("Updating Jira status to: %s", mapping.PRCreatedStatus))
@@ -407,10 +434,10 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 
 	// 复制 URL 到剪贴板
 	copyToClipboard(pr.HTMLURL)
-	
+
 	// 打开浏览器
 	openBrowser(pr.HTMLURL)
-	
+
 	fmt.Println()
 	ui.Success("All done! 🎉")
 }
@@ -484,13 +511,13 @@ func generateSimpleTitle(jiraSummary, prType, description string) string {
 		}
 		return description
 	}
-	
+
 	// 否则使用 Jira 标题的前 50 个字符
 	summary := jiraSummary
 	if len(summary) > 50 {
 		summary = summary[:50] + "..."
 	}
-	
+
 	if prType != "" {
 		return fmt.Sprintf("%s: %s", prType, summary)
 	}
@@ -516,3 +543,57 @@ func openBrowser(url string) {
 	}
 }
 
+// rollbackBranch rolls back branch creation when PR creation fails
+// It preserves changes, deletes the remote/local branch, and switches back to original branch
+func rollbackBranch(originalBranch, newBranch string) {
+	// 1. 撤销 commit 但保留改动在暂存区
+	ui.Info("Undoing commit to preserve changes...")
+	resetCmd := exec.Command("git", "reset", "--soft", "HEAD~1")
+	if err := resetCmd.Run(); err != nil {
+		ui.Warning(fmt.Sprintf("Failed to reset commit: %v", err))
+	}
+
+	// 2. 暂存改动
+	ui.Info("Stashing changes...")
+	stashCmd := exec.Command("git", "stash", "--include-untracked")
+	if err := stashCmd.Run(); err != nil {
+		ui.Warning(fmt.Sprintf("Failed to stash changes: %v", err))
+	}
+
+	// 3. 删除远程分支
+	ui.Info("Deleting remote branch...")
+	if err := git.DeleteRemoteBranch(newBranch); err != nil {
+		ui.Warning(fmt.Sprintf("Failed to delete remote branch: %v", err))
+	} else {
+		ui.Success("Remote branch deleted")
+	}
+
+	// 4. 切换回原分支
+	ui.Info(fmt.Sprintf("Switching back to branch: %s", originalBranch))
+	if err := git.CheckoutBranch(originalBranch); err != nil {
+		ui.Error(fmt.Sprintf("Failed to checkout original branch: %v", err))
+		ui.Warning("Your changes are in git stash. Use 'git stash pop' to recover them.")
+		return
+	}
+	ui.Success(fmt.Sprintf("Switched to branch: %s", originalBranch))
+
+	// 5. 删除本地新分支
+	ui.Info("Deleting local branch...")
+	if err := git.DeleteBranch(newBranch); err != nil {
+		ui.Warning(fmt.Sprintf("Failed to delete local branch: %v", err))
+	} else {
+		ui.Success("Local branch deleted")
+	}
+
+	// 6. 恢复暂存的改动
+	ui.Info("Restoring your changes...")
+	stashPopCmd := exec.Command("git", "stash", "pop")
+	if err := stashPopCmd.Run(); err != nil {
+		ui.Warning(fmt.Sprintf("Failed to restore changes: %v", err))
+		ui.Warning("Your changes are in git stash. Use 'git stash pop' to recover them.")
+	} else {
+		ui.Success("Changes restored to staging area")
+	}
+
+	ui.Success("Rollback completed! Your changes are preserved.")
+}
