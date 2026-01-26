@@ -175,13 +175,21 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 			lines := strings.Split(strings.TrimSpace(prDesc), "\n")
 			var titleText string
 
-			// 查找 "## Summary" 后面的内容，或者使用第一行
+			// 查找 "## Summary" 后面的第一个非空行
 			for i, line := range lines {
 				line = strings.TrimSpace(line)
-				if strings.HasPrefix(line, "## Summary") && i+1 < len(lines) {
-					// 使用 Summary 后面的第一行
-					titleText = strings.TrimSpace(lines[i+1])
-					break
+				if strings.HasPrefix(line, "## Summary") {
+					// 跳过 Summary 行和后续的空行，找到第一个非空行
+					for j := i + 1; j < len(lines); j++ {
+						nextLine := strings.TrimSpace(lines[j])
+						if nextLine != "" && !strings.HasPrefix(nextLine, "#") {
+							titleText = nextLine
+							break
+						}
+					}
+					if titleText != "" {
+						break
+					}
 				} else if !strings.HasPrefix(line, "#") && line != "" && titleText == "" {
 					// 使用第一个非标题行
 					titleText = line
@@ -468,7 +476,11 @@ func buildPRBody(types []string, jiraTicket string, prDesc string) string {
 
 	body.WriteString("# PR Ready\n\n")
 
-	if len(types) > 0 {
+	// 检查 prDesc 中是否已经包含 "Types of changes" 部分
+	hasTypesInDesc := strings.Contains(prDesc, "## Types of changes") || strings.Contains(prDesc, "Types of changes")
+
+	if len(types) > 0 && !hasTypesInDesc {
+		// prDesc 中没有 Types of changes，自动添加
 		body.WriteString("## Types of changes\n\n")
 		for _, t := range types {
 			body.WriteString(fmt.Sprintf("- [x] %s\n", t))
