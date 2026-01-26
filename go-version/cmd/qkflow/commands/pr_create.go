@@ -476,8 +476,10 @@ func buildPRBody(types []string, jiraTicket string, prDesc string) string {
 
 	body.WriteString("# PR Ready\n\n")
 
-	// 检查 prDesc 中是否已经包含 "Types of changes" 部分
-	hasTypesInDesc := strings.Contains(prDesc, "## Types of changes") || strings.Contains(prDesc, "Types of changes")
+	// 检查 prDesc 中是否已经包含 "Types of changes" 部分（不区分大小写）
+	prDescLower := strings.ToLower(prDesc)
+	hasTypesInDesc := strings.Contains(prDescLower, "types of changes") || 
+		strings.Contains(prDescLower, "## types of changes")
 
 	if len(types) > 0 && !hasTypesInDesc {
 		// prDesc 中没有 Types of changes，自动添加
