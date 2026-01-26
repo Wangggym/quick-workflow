@@ -17,7 +17,7 @@ type Client struct {
 	apiKey   string
 	apiURL   string
 	model    string
-	provider string // "openai" or "deepseek"
+	provider string // "openai", "deepseek", or "cerebras"
 }
 
 // TranslationResult represents the result of AI translation
@@ -34,30 +34,103 @@ func NewClient() (*Client, error) {
 		return nil, fmt.Errorf("config not loaded")
 	}
 
-	// 优先使用 DeepSeek，然后是 OpenAI
-	if cfg.DeepSeekKey != "" {
-		return &Client{
-			apiKey:   cfg.DeepSeekKey,
-			apiURL:   "https://api.deepseek.com/v1/chat/completions",
-			model:    "deepseek-chat",
-			provider: "deepseek",
-		}, nil
+	// 根据 ai_provider 配置选择 AI 服务
+	provider := cfg.AIProvider
+	if provider == "" {
+		provider = "auto"
 	}
 
-	if cfg.OpenAIKey != "" {
-		apiURL := "https://api.openai.com/v1/chat/completions"
-		if cfg.OpenAIProxyURL != "" {
-			apiURL = cfg.OpenAIProxyURL
+	switch provider {
+	case "cerebras":
+		if cfg.CerebrasKey != "" {
+			apiURL := cfg.CerebrasURL
+			if apiURL == "" {
+				apiURL = "https://cerebras-proxy.brain.loocaa.com:1443/v1/chat/completions"
+			} else if !strings.HasSuffix(apiURL, "/chat/completions") {
+				apiURL = strings.TrimSuffix(apiURL, "/") + "/chat/completions"
+			}
+			return &Client{
+				apiKey:   cfg.CerebrasKey,
+				apiURL:   apiURL,
+				model:    "llama-3.3-70b",
+				provider: "cerebras",
+			}, nil
 		}
-		return &Client{
-			apiKey:   cfg.OpenAIKey,
-			apiURL:   apiURL,
-			model:    "gpt-3.5-turbo",
-			provider: "openai",
-		}, nil
+		return nil, fmt.Errorf("cerebras selected but CEREBRAS_API_KEY not configured")
+
+	case "deepseek":
+		if cfg.DeepSeekKey != "" {
+			return &Client{
+				apiKey:   cfg.DeepSeekKey,
+				apiURL:   "https://api.deepseek.com/v1/chat/completions",
+				model:    "deepseek-chat",
+				provider: "deepseek",
+			}, nil
+		}
+		return nil, fmt.Errorf("deepseek selected but DEEPSEEK_KEY not configured")
+
+	case "openai":
+		if cfg.OpenAIKey != "" {
+			apiURL := "https://api.openai.com/v1/chat/completions"
+			if cfg.OpenAIProxyURL != "" {
+				apiURL = cfg.OpenAIProxyURL
+				if !strings.HasSuffix(apiURL, "/chat/completions") {
+					apiURL = strings.TrimSuffix(apiURL, "/") + "/chat/completions"
+				}
+			}
+			return &Client{
+				apiKey:   cfg.OpenAIKey,
+				apiURL:   apiURL,
+				model:    "gpt-3.5-turbo",
+				provider: "openai",
+			}, nil
+		}
+		return nil, fmt.Errorf("openai selected but OPENAI_KEY not configured")
+
+	default: // "auto" - 自动选择可用的 AI 服务
+		// 优先级: Cerebras > DeepSeek > OpenAI
+		if cfg.CerebrasKey != "" {
+			apiURL := cfg.CerebrasURL
+			if apiURL == "" {
+				apiURL = "https://cerebras-proxy.brain.loocaa.com:1443/v1/chat/completions"
+			} else if !strings.HasSuffix(apiURL, "/chat/completions") {
+				apiURL = strings.TrimSuffix(apiURL, "/") + "/chat/completions"
+			}
+			return &Client{
+				apiKey:   cfg.CerebrasKey,
+				apiURL:   apiURL,
+				model:    "llama-3.3-70b",
+				provider: "cerebras",
+			}, nil
+		}
+
+		if cfg.DeepSeekKey != "" {
+			return &Client{
+				apiKey:   cfg.DeepSeekKey,
+				apiURL:   "https://api.deepseek.com/v1/chat/completions",
+				model:    "deepseek-chat",
+				provider: "deepseek",
+			}, nil
+		}
+
+		if cfg.OpenAIKey != "" {
+			apiURL := "https://api.openai.com/v1/chat/completions"
+			if cfg.OpenAIProxyURL != "" {
+				apiURL = cfg.OpenAIProxyURL
+				if !strings.HasSuffix(apiURL, "/chat/completions") {
+					apiURL = strings.TrimSuffix(apiURL, "/") + "/chat/completions"
+				}
+			}
+			return &Client{
+				apiKey:   cfg.OpenAIKey,
+				apiURL:   apiURL,
+				model:    "gpt-3.5-turbo",
+				provider: "openai",
+			}, nil
+		}
 	}
 
-	return nil, fmt.Errorf("no AI API key configured (OPENAI_KEY or DEEPSEEK_KEY)")
+	return nil, fmt.Errorf("no AI API key configured (CEREBRAS_API_KEY, DEEPSEEK_KEY, or OPENAI_KEY)")
 }
 
 // ChatCompletionRequest represents the request to chat completion API

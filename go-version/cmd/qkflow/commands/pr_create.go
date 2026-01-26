@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/Wangggym/quick-workflow/internal/ai"
-	"github.com/Wangggym/quick-workflow/internal/editor"
 	"github.com/Wangggym/quick-workflow/internal/git"
 	"github.com/Wangggym/quick-workflow/internal/github"
 	"github.com/Wangggym/quick-workflow/internal/jira"
@@ -16,6 +15,13 @@ import (
 	"github.com/Wangggym/quick-workflow/internal/watcher"
 	"github.com/Wangggym/quick-workflow/pkg/config"
 	"github.com/spf13/cobra"
+)
+
+var (
+	prDesc   string
+	prTypes  []string
+	noTicket bool
+	prTitle  string
 )
 
 var prCreateCmd = &cobra.Command{
@@ -30,6 +36,13 @@ var prCreateCmd = &cobra.Command{
   - Update Jira status`,
 	Args: cobra.MaximumNArgs(1),
 	Run:  runPRCreate,
+}
+
+func init() {
+	prCreateCmd.Flags().StringVar(&prDesc, "pr-desc", "", "PR description body content")
+	prCreateCmd.Flags().StringSliceVar(&prTypes, "types", []string{}, "Change types (e.g., feat,fix,docs)")
+	prCreateCmd.Flags().BoolVar(&noTicket, "no-ticket", false, "Skip Jira ticket (proceed without ticket)")
+	prCreateCmd.Flags().StringVar(&prTitle, "title", "", "PR title (if not provided, will be generated from description)")
 }
 
 func runPRCreate(cmd *cobra.Command, args []string) {
@@ -59,7 +72,10 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 
 	// 获取或输入 Jira ticket
 	var jiraTicket string
-	if len(args) > 0 {
+	if noTicket {
+		// 明确指定跳过 ticket
+		jiraTicket = ""
+	} else if len(args) > 0 {
 		jiraTicket = args[0]
 	} else {
 		jiraTicket, err = ui.PromptInput("Jira ticket (optional, press Enter to skip):", false)
@@ -96,31 +112,22 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 	}
 
 	// 选择变更类型
-	prTypes := ui.PRTypeOptions()
-	selectedTypes, err := ui.PromptMultiSelect("Select type(s) of changes:", prTypes)
-	if err != nil {
-		if err.Error() == "interrupt" {
-			ui.Warning("Operation cancelled by user")
-			os.Exit(0)
-		}
-		ui.Warning("No types selected, continuing...")
-		selectedTypes = []string{}
-	}
-
-	// 询问是否添加说明/截图 (空格选择，Enter 跳过)
-	var editorResult *editor.EditorResult
-	addDescription, err := ui.PromptOptional("Add detailed description with images/videos?")
-	if err == nil && addDescription {
-		ui.Info("Opening web editor...")
-		editorResult, err = editor.StartEditor()
+	var selectedTypes []string
+	if len(prTypes) > 0 {
+		// 使用命令行提供的类型
+		selectedTypes = prTypes
+		ui.Info(fmt.Sprintf("Using provided types: %v", prTypes))
+	} else {
+		// 交互式选择
+		prTypeOptions := ui.PRTypeOptions()
+		selectedTypes, err = ui.PromptMultiSelect("Select type(s) of changes:", prTypeOptions)
 		if err != nil {
-			ui.Warning(fmt.Sprintf("Failed to start editor: %v", err))
-			editorResult = nil
-		} else if editorResult.Content == "" && len(editorResult.Files) == 0 {
-			ui.Info("No content added, skipping...")
-			editorResult = nil
-		} else {
-			ui.Success(fmt.Sprintf("Content saved! (%d characters, %d files)", len(editorResult.Content), len(editorResult.Files)))
+			if err.Error() == "interrupt" {
+				ui.Warning("Operation cancelled by user")
+				os.Exit(0)
+			}
+			ui.Warning("No types selected, continuing...")
+			selectedTypes = []string{}
 		}
 	}
 
@@ -143,6 +150,8 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 				// 回退到简单格式
 				title = generateSimpleTitle(jiraIssue.Summary, prType, "")
 			} else {
+				// 确保标题有类型前缀且格式正确
+				title = ensureTitlePrefix(title, prType)
 				ui.Success(fmt.Sprintf("Generated title: %s", title))
 			}
 		} else {
@@ -151,20 +160,71 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 			ui.Success(fmt.Sprintf("Generated title: %s", title))
 		}
 	} else {
-		// 没有 Jira，手动输入
-		title, err = ui.PromptInput("Enter PR title:", true)
-		if err != nil {
-			if err.Error() == "interrupt" {
-				ui.Warning("Operation cancelled by user")
-				os.Exit(0)
+		// 没有 Jira
+		if prTitle != "" {
+			// 使用提供的标题，确保有类型前缀
+			if len(selectedTypes) > 0 {
+				prType := ui.ExtractPRType(selectedTypes[0])
+				title = ensureTitlePrefix(prTitle, prType)
+			} else {
+				title = prTitle
 			}
-			ui.Error(fmt.Sprintf("Failed to get title: %v", err))
-			return
+			ui.Success(fmt.Sprintf("Using provided title: %s", title))
+		} else if prDesc != "" {
+			// 从描述中提取标题
+			lines := strings.Split(strings.TrimSpace(prDesc), "\n")
+			var titleText string
+
+			// 查找 "## Summary" 后面的内容，或者使用第一行
+			for i, line := range lines {
+				line = strings.TrimSpace(line)
+				if strings.HasPrefix(line, "## Summary") && i+1 < len(lines) {
+					// 使用 Summary 后面的第一行
+					titleText = strings.TrimSpace(lines[i+1])
+					break
+				} else if !strings.HasPrefix(line, "#") && line != "" && titleText == "" {
+					// 使用第一个非标题行
+					titleText = line
+					break
+				}
+			}
+
+			// 如果没有找到，使用第一行
+			if titleText == "" && len(lines) > 0 {
+				titleText = strings.TrimSpace(lines[0])
+				titleText = strings.TrimPrefix(titleText, "# ")
+				titleText = strings.TrimPrefix(titleText, "## ")
+			}
+
+			// 确保标题有类型前缀
+			if len(selectedTypes) > 0 {
+				prType := ui.ExtractPRType(selectedTypes[0])
+				// 如果标题已经有类型前缀，不重复添加
+				if !strings.HasPrefix(strings.ToLower(titleText), strings.ToLower(prType)+":") {
+					title = fmt.Sprintf("%s: %s", capitalizeFirst(prType), truncateString(titleText, 80))
+				} else {
+					title = truncateString(titleText, 100)
+				}
+			} else {
+				title = truncateString(titleText, 100)
+			}
+			ui.Success(fmt.Sprintf("Generated title: %s", title))
+		} else {
+			// 没有描述，手动输入
+			title, err = ui.PromptInput("Enter PR title:", true)
+			if err != nil {
+				if err.Error() == "interrupt" {
+					ui.Warning("Operation cancelled by user")
+					os.Exit(0)
+				}
+				ui.Error(fmt.Sprintf("Failed to get title: %v", err))
+				return
+			}
 		}
 	}
 
-	// 构建 PR body
-	prBody := buildPRBody(selectedTypes, jiraTicket)
+	// 构建 PR body（包含描述）
+	prBody := buildPRBody(selectedTypes, jiraTicket, prDesc)
 
 	// 创建分支名
 	branchName := buildBranchName(jiraTicket, title)
@@ -273,71 +333,16 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 
 	ui.Success(fmt.Sprintf("Pull request created: %s", pr.HTMLURL))
 
-	// 处理编辑器内容（上传文件并添加评论）
-	if editorResult != nil && (editorResult.Content != "" || len(editorResult.Files) > 0) {
-		ui.Info("Processing description and files...")
-
-		// 创建 Jira 客户端（如果需要）
-		var jiraClient *jira.Client
-		if jiraTicket != "" && jira.ValidateIssueKey(jiraTicket) {
-			jiraClient, err = jira.NewClient()
-			if err != nil {
-				ui.Warning(fmt.Sprintf("Failed to create Jira client for file upload: %v", err))
-				jiraClient = nil
-			}
-		}
-
-		// 上传文件
-		var uploadResults []editor.UploadResult
-		if len(editorResult.Files) > 0 {
-			ui.Info(fmt.Sprintf("Uploading %d file(s)...", len(editorResult.Files)))
-			uploadResults, err = editor.UploadFiles(
-				editorResult.Files,
-				ghClient,
-				jiraClient,
-				pr.Number,
-				owner,
-				repo,
-				jiraTicket,
-			)
-			if err != nil {
-				ui.Warning(fmt.Sprintf("Failed to upload files: %v", err))
-			} else {
-				ui.Success(fmt.Sprintf("Uploaded %d file(s)", len(uploadResults)))
-			}
-		}
-
-		// 替换 markdown 中的本地路径为在线 URL
-		content := editorResult.Content
-		if len(uploadResults) > 0 {
-			content = editor.ReplaceLocalPathsWithURLs(content, uploadResults)
-		}
-
-		// 添加评论到 GitHub PR
-		if content != "" {
-			ui.Info("Adding description to GitHub PR...")
-			if err := ghClient.AddPRComment(owner, repo, pr.Number, content); err != nil {
-				ui.Warning(fmt.Sprintf("Failed to add comment to GitHub: %v", err))
-			} else {
-				ui.Success("Description added to GitHub PR")
-			}
-		}
-
-		// 添加评论到 Jira
-		if jiraClient != nil && jiraTicket != "" && content != "" {
-			ui.Info("Adding description to Jira...")
-			jiraComment := fmt.Sprintf("*PR Description:*\n\n%s\n\n[View PR|%s]", content, pr.HTMLURL)
+	// 如果有 Jira ticket，添加 PR 链接到 Jira（描述已经在 PR body 中了）
+	if jiraTicket != "" && jira.ValidateIssueKey(jiraTicket) {
+		jiraClient, err := jira.NewClient()
+		if err == nil {
+			ui.Info("Adding PR link to Jira...")
+			jiraComment := fmt.Sprintf("*PR Created:*\n\n[View PR|%s]", pr.HTMLURL)
 			if err := jiraClient.AddComment(jiraTicket, jiraComment); err != nil {
 				ui.Warning(fmt.Sprintf("Failed to add comment to Jira: %v", err))
 			} else {
-				ui.Success("Description added to Jira")
-			}
-		}
-
-		// 清理临时文件
-		if len(editorResult.Files) > 0 {
-			for _, file := range editorResult.Files {
-				os.Remove(file)
+				ui.Success("PR link added to Jira")
 			}
 		}
 	}
@@ -376,17 +381,25 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 				if err != nil {
 					ui.Warning(fmt.Sprintf("Failed to get cached status: %v", err))
 				} else if mapping == nil {
-					// 第一次使用，配置状态映射
-					ui.Info(fmt.Sprintf("First time using project %s, please configure status mappings", projectKey))
-					mapping, err = setupProjectStatusMapping(jiraClient, projectKey)
-					if err != nil {
-						ui.Warning(fmt.Sprintf("Failed to setup status mapping: %v", err))
-					} else if mapping != nil {
-						// 保存配置
-						if err := statusCache.SaveProjectStatus(mapping); err != nil {
-							ui.Warning(fmt.Sprintf("Failed to save status mapping: %v", err))
-						} else {
-							ui.Success("Status mapping saved!")
+					// 第一次使用，需要配置状态映射
+					// 检查是否有提供 --types 或 --pr-desc（表示可能是非交互模式）
+					if len(prTypes) > 0 || prDesc != "" {
+						ui.Error(fmt.Sprintf("❌ No status mapping found for project %s", projectKey))
+						ui.Info("💡 Please run 'qkflow pr create' interactively first to configure status mappings")
+						ui.Info("   Then you can use --types and --pr-desc flags for automation")
+					} else {
+						// 交互式配置状态映射
+						ui.Info(fmt.Sprintf("First time using project %s, please configure status mappings", projectKey))
+						mapping, err = setupProjectStatusMapping(jiraClient, projectKey)
+						if err != nil {
+							ui.Warning(fmt.Sprintf("Failed to setup status mapping: %v", err))
+						} else if mapping != nil {
+							// 保存配置
+							if err := statusCache.SaveProjectStatus(mapping); err != nil {
+								ui.Warning(fmt.Sprintf("Failed to save status mapping: %v", err))
+							} else {
+								ui.Success("Status mapping saved!")
+							}
 						}
 					}
 				}
@@ -450,7 +463,7 @@ func buildBranchName(jiraTicket, title string) string {
 	return sanitized
 }
 
-func buildPRBody(types []string, jiraTicket string) string {
+func buildPRBody(types []string, jiraTicket string, prDesc string) string {
 	var body strings.Builder
 
 	body.WriteString("# PR Ready\n\n")
@@ -466,7 +479,14 @@ func buildPRBody(types []string, jiraTicket string) string {
 	if jiraTicket != "" {
 		cfg := config.Get()
 		jiraURL := fmt.Sprintf("%s/browse/%s", cfg.JiraServiceAddress, jiraTicket)
-		body.WriteString(fmt.Sprintf("#### Jira Link:\n\n%s\n", jiraURL))
+		body.WriteString(fmt.Sprintf("#### Jira Link:\n\n%s\n\n", jiraURL))
+	}
+
+	// 如果提供了描述，添加到 body 中
+	if prDesc != "" {
+		body.WriteString("---\n\n")
+		body.WriteString(prDesc)
+		body.WriteString("\n")
 	}
 
 	return body.String()
@@ -503,11 +523,49 @@ func setupProjectStatusMapping(client *jira.Client, projectKey string) (*jira.St
 	}, nil
 }
 
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen-3] + "..."
+}
+
+func capitalizeFirst(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + strings.ToLower(s[1:])
+}
+
+func ensureTitlePrefix(title, prType string) string {
+	if prType == "" {
+		return title
+	}
+
+	// 检查标题是否已经有类型前缀
+	prTypeLower := strings.ToLower(prType)
+	titleLower := strings.ToLower(title)
+
+	// 检查各种可能的格式
+	if strings.HasPrefix(titleLower, prTypeLower+":") ||
+		strings.HasPrefix(titleLower, capitalizeFirst(prType)+":") {
+		// 已经有前缀，确保格式正确（首字母大写）
+		parts := strings.SplitN(title, ":", 2)
+		if len(parts) == 2 {
+			return fmt.Sprintf("%s:%s", capitalizeFirst(prType), parts[1])
+		}
+		return title
+	}
+
+	// 没有前缀，添加
+	return fmt.Sprintf("%s: %s", capitalizeFirst(prType), title)
+}
+
 func generateSimpleTitle(jiraSummary, prType, description string) string {
 	// 如果有简短描述，使用描述
 	if description != "" {
 		if prType != "" {
-			return fmt.Sprintf("%s: %s", prType, description)
+			return fmt.Sprintf("%s: %s", capitalizeFirst(prType), description)
 		}
 		return description
 	}
@@ -519,7 +577,7 @@ func generateSimpleTitle(jiraSummary, prType, description string) string {
 	}
 
 	if prType != "" {
-		return fmt.Sprintf("%s: %s", prType, summary)
+		return fmt.Sprintf("%s: %s", capitalizeFirst(prType), summary)
 	}
 	return summary
 }
