@@ -71,6 +71,7 @@ func init() {
 	rootCmd.AddCommand(jiraCmd)
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(watchCmd)
+	rootCmd.AddCommand(aiCmd)
 }
 
 var versionCmd = &cobra.Command{
@@ -140,21 +141,68 @@ var configCmd = &cobra.Command{
 		fmt.Println()
 		fmt.Println("🤖 AI (optional):")
 		
-		// Determine which AI service is active
+		// Show AI provider mode
+		provider := cfg.AIProvider
+		if provider == "" {
+			provider = "auto"
+		}
+		fmt.Printf("  Provider Mode: %s\n", provider)
+		
+		// Determine which AI service is active based on provider setting
+		hasCerebras := cfg.CerebrasKey != ""
 		hasDeepSeek := cfg.DeepSeekKey != ""
 		hasOpenAI := cfg.OpenAIKey != ""
 		
+		// Determine active provider
+		var activeProvider string
+		switch provider {
+		case "cerebras":
+			activeProvider = "cerebras"
+		case "deepseek":
+			activeProvider = "deepseek"
+		case "openai":
+			activeProvider = "openai"
+		default: // auto
+			if hasCerebras {
+				activeProvider = "cerebras"
+			} else if hasDeepSeek {
+				activeProvider = "deepseek"
+			} else if hasOpenAI {
+				activeProvider = "openai"
+			}
+		}
+		
+		// Show Cerebras status
+		if hasCerebras {
+			if activeProvider == "cerebras" {
+				fmt.Printf("  Cerebras Key: %s ✅ (Active)\n", maskToken(cfg.CerebrasKey))
+			} else {
+				fmt.Printf("  Cerebras Key: %s\n", maskToken(cfg.CerebrasKey))
+			}
+			if cfg.CerebrasURL != "" {
+				fmt.Printf("  Cerebras URL: %s\n", cfg.CerebrasURL)
+			}
+		} else {
+			fmt.Printf("  Cerebras Key: not configured\n")
+		}
+		
+		// Show DeepSeek status
 		if hasDeepSeek {
-			fmt.Printf("  DeepSeek Key: %s ✅ (Active)\n", maskToken(cfg.DeepSeekKey))
+			if activeProvider == "deepseek" {
+				fmt.Printf("  DeepSeek Key: %s ✅ (Active)\n", maskToken(cfg.DeepSeekKey))
+			} else {
+				fmt.Printf("  DeepSeek Key: %s\n", maskToken(cfg.DeepSeekKey))
+			}
 		} else {
 			fmt.Printf("  DeepSeek Key: not configured\n")
 		}
 		
+		// Show OpenAI status
 		if hasOpenAI {
-			if hasDeepSeek {
-				fmt.Printf("  OpenAI Key: %s ✅ (Backup)\n", maskToken(cfg.OpenAIKey))
-			} else {
+			if activeProvider == "openai" {
 				fmt.Printf("  OpenAI Key: %s ✅ (Active)\n", maskToken(cfg.OpenAIKey))
+			} else {
+				fmt.Printf("  OpenAI Key: %s\n", maskToken(cfg.OpenAIKey))
 			}
 		} else {
 			fmt.Printf("  OpenAI Key: not configured\n")
@@ -164,9 +212,10 @@ var configCmd = &cobra.Command{
 			fmt.Printf("  OpenAI Proxy URL: %s\n", cfg.OpenAIProxyURL)
 		}
 		
-		if !hasDeepSeek && !hasOpenAI {
+		if !hasCerebras && !hasDeepSeek && !hasOpenAI {
 			fmt.Println()
 			fmt.Println("  💡 Tip: Configure AI for automatic PR title/description generation")
+			fmt.Println("         Run 'qkflow ai set cerebras-key YOUR_KEY' to get started")
 		}
 	},
 }

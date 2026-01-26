@@ -21,6 +21,9 @@ type Config struct {
 	DeepSeekKey        string `mapstructure:"deepseek_key"`
 	OpenAIProxyURL     string `mapstructure:"openai_proxy_url"`
 	OpenAIProxyKey     string `mapstructure:"openai_proxy_key"`
+	CerebrasKey        string `mapstructure:"cerebras_key"`
+	CerebrasURL        string `mapstructure:"cerebras_url"`
+	AIProvider         string `mapstructure:"ai_provider"` // "auto", "deepseek", "openai", "cerebras"
 	AutoUpdate         bool   `mapstructure:"auto_update"`
 }
 
@@ -58,6 +61,9 @@ func Load() (*Config, error) {
 	viper.BindEnv("deepseek_key", "DEEPSEEK_KEY")
 	viper.BindEnv("openai_proxy_url", "OPENAI_PROXY_URL")
 	viper.BindEnv("openai_proxy_key", "OPENAI_PROXY_KEY")
+	viper.BindEnv("cerebras_key", "CEREBRAS_API_KEY")
+	viper.BindEnv("cerebras_url", "CEREBRAS_BASE_URL")
+	viper.BindEnv("ai_provider", "AI_PROVIDER")
 	viper.BindEnv("email", "EMAIL")
 	viper.BindEnv("auto_update", "AUTO_UPDATE")
 
@@ -113,6 +119,9 @@ func Save(cfg *Config) error {
 	viper.Set("deepseek_key", cfg.DeepSeekKey)
 	viper.Set("openai_proxy_url", cfg.OpenAIProxyURL)
 	viper.Set("openai_proxy_key", cfg.OpenAIProxyKey)
+	viper.Set("cerebras_key", cfg.CerebrasKey)
+	viper.Set("cerebras_url", cfg.CerebrasURL)
+	viper.Set("ai_provider", cfg.AIProvider)
 	viper.Set("auto_update", cfg.AutoUpdate)
 
 	// 写入文件
@@ -152,7 +161,9 @@ func IsConfigured() bool {
 
 func setDefaults() {
 	viper.SetDefault("branch_prefix", "")
-	viper.SetDefault("auto_update", true) // 默认启用自动更新
+	viper.SetDefault("auto_update", true)                                                  // 默认启用自动更新
+	viper.SetDefault("ai_provider", "auto")                                                // 默认自动选择 AI provider
+	viper.SetDefault("cerebras_url", "https://cerebras-proxy.brain.loocaa.com:1443/v1")    // 默认 Cerebras URL
 }
 
 // GetConfigDir returns the config directory path
