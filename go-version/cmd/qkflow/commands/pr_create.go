@@ -341,20 +341,6 @@ func runPRCreate(cmd *cobra.Command, args []string) {
 
 	ui.Success(fmt.Sprintf("Pull request created: %s", pr.HTMLURL))
 
-	// 如果有 Jira ticket，添加 PR 链接到 Jira（描述已经在 PR body 中了）
-	if jiraTicket != "" && jira.ValidateIssueKey(jiraTicket) {
-		jiraClient, err := jira.NewClient()
-		if err == nil {
-			ui.Info("Adding PR link to Jira...")
-			jiraComment := fmt.Sprintf("*PR Created:*\n\n[View PR|%s]", pr.HTMLURL)
-			if err := jiraClient.AddComment(jiraTicket, jiraComment); err != nil {
-				ui.Warning(fmt.Sprintf("Failed to add comment to Jira: %v", err))
-			} else {
-				ui.Success("PR link added to Jira")
-			}
-		}
-	}
-
 	// 更新 Jira
 	if jiraTicket != "" && jira.ValidateIssueKey(jiraTicket) {
 		jiraClient, err := jira.NewClient()
