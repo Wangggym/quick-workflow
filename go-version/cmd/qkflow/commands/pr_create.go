@@ -460,31 +460,31 @@ func buildBranchName(jiraTicket, title string) string {
 func buildPRBody(types []string, jiraTicket string, prDesc string) string {
 	var body strings.Builder
 
-	body.WriteString("# PR Ready\n\n")
-
 	// 检查 prDesc 中是否已经包含 "Types of changes" 部分（不区分大小写）
 	prDescLower := strings.ToLower(prDesc)
-	hasTypesInDesc := strings.Contains(prDescLower, "types of changes") || 
+	hasTypesInDesc := strings.Contains(prDescLower, "types of changes") ||
 		strings.Contains(prDescLower, "## types of changes")
 
+	// 紧凑的元信息行: **Type**: feat, fix | **Jira**: [NA-123](url)
+	var metaParts []string
+
 	if len(types) > 0 && !hasTypesInDesc {
-		// prDesc 中没有 Types of changes，自动添加
-		body.WriteString("## Types of changes\n\n")
-		for _, t := range types {
-			body.WriteString(fmt.Sprintf("- [x] %s\n", t))
-		}
-		body.WriteString("\n")
+		metaParts = append(metaParts, fmt.Sprintf("**Type**: %s", strings.Join(types, ", ")))
 	}
 
 	if jiraTicket != "" {
 		cfg := config.Get()
 		jiraURL := fmt.Sprintf("%s/browse/%s", cfg.JiraServiceAddress, jiraTicket)
-		body.WriteString(fmt.Sprintf("#### Jira Link:\n\n%s\n\n", jiraURL))
+		metaParts = append(metaParts, fmt.Sprintf("**Jira**: [%s](%s)", jiraTicket, jiraURL))
 	}
 
-	// 如果提供了描述，添加到 body 中
+	if len(metaParts) > 0 {
+		body.WriteString(strings.Join(metaParts, " | "))
+		body.WriteString("\n\n")
+	}
+
+	// 添加描述
 	if prDesc != "" {
-		body.WriteString("---\n\n")
 		body.WriteString(prDesc)
 		body.WriteString("\n")
 	}
